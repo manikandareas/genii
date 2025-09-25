@@ -1,12 +1,28 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { GripVertical } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -37,6 +53,7 @@ import {
   quizQuestionSchema,
   type QuizFormValues,
 } from "@/features/admin/quizzes/schema";
+import { SortableItem } from "@/features/admin/shared/components/sortable-item";
 
 interface QuizFormProps {
   quizId?: Id<"quizzes">;
@@ -58,6 +75,22 @@ interface QuizFormProps {
     _creationTime: number;
   } | null;
 }
+
+const adjustCorrectIndex = (current: number, from: number, to: number) => {
+  if (current === from) {
+    return to;
+  }
+
+  if (from < current && current <= to) {
+    return current - 1;
+  }
+
+  if (to <= current && current < from) {
+    return current + 1;
+  }
+
+  return current;
+};
 
 export function QuizForm({ quizId, initialData }: QuizFormProps) {
   const router = useRouter();
@@ -136,10 +169,38 @@ export function QuizForm({ quizId, initialData }: QuizFormProps) {
   const updateQuiz = useMutation(api.admin.quizzes.mutations.update);
   const removeQuiz = useMutation(api.admin.quizzes.mutations.remove);
 
-  const { fields: questionFields, append, remove } = useFieldArray({
+  const { fields: questionFields, append, remove, move } = useFieldArray({
     name: "questions",
     control: form.control,
   });
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleQuestionDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      const activeIndex = questionFields.findIndex((field) => field.id === active.id);
+      const overIndex = questionFields.findIndex((field) => field.id === over.id);
+
+      if (activeIndex === -1 || overIndex === -1) {
+        return;
+      }
+
+      move(activeIndex, overIndex);
+    },
+    [move, questionFields],
+  );
 
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(Boolean(initialData));
   const titleValue = form.watch("title");
@@ -415,89 +476,213 @@ export function QuizForm({ quizId, initialData }: QuizFormProps) {
                 Add question
               </Button>
             </div>
-            <div className="grid gap-6">
-              {questionFields.map((questionField, questionIndex) => {
-                const options = form.watch(`questions.${questionIndex}.options`);
-                const correctIndex = form.watch(`questions.${questionIndex}.correctOptionIndex`);
-                return (
-                  <div key={questionField.id} className="grid gap-4 rounded-lg border border-border/60 bg-background/40 p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <FormField
-                        control={form.control}
-                        name={`questions.${questionIndex}.question`}
-                        render={({ field }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel>Question text</FormLabel>
-                            <FormControl>
-                              <Textarea rows={3} placeholder="Enter the question" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
+            <DndContext sensors={dndSensors} onDragEnd={handleQuestionDragEnd}>
+              <SortableContext
+                items={questionFields.map((field) => field.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="grid gap-6">
+                  {questionFields.map((questionField, questionIndex) => {
+                    const optionValues =
+                      form.watch(`questions.${questionIndex}.options`) ?? [];
+                    const correctIndex =
+                      form.watch(`questions.${questionIndex}.correctOptionIndex`) ?? 0;
+                    const optionIds = optionValues.map(
+                      (_option, optionIndex) => `${questionField.id}-option-${optionIndex}`,
+                    );
+
+                    const handleOptionDragEnd = (event: DragEndEvent) => {
+                      const { active, over } = event;
+                      if (!over || active.id === over.id) {
+                        return;
+                      }
+
+                      const oldIndex = optionIds.indexOf(active.id as string);
+                      const newIndex = optionIds.indexOf(over.id as string);
+
+                      if (oldIndex === -1 || newIndex === -1) {
+                        return;
+                      }
+
+                      const reordered = arrayMove(optionValues, oldIndex, newIndex);
+                      form.setValue(`questions.${questionIndex}.options`, reordered);
+
+                      const currentCorrect = form.getValues(
+                        `questions.${questionIndex}.correctOptionIndex`,
+                      ) as number;
+                      const nextCorrect = adjustCorrectIndex(
+                        currentCorrect,
+                        oldIndex,
+                        newIndex,
+                      );
+                      if (nextCorrect !== currentCorrect) {
+                        form.setValue(
+                          `questions.${questionIndex}.correctOptionIndex`,
+                          nextCorrect,
+                        );
+                      }
+                    };
+
+                    return (
+                      <SortableItem key={questionField.id} id={questionField.id}>
+                        {({ attributes, listeners, setActivatorNodeRef, isDragging }) => (
+                          <div
+                            className={`grid gap-4 rounded-lg border border-border/60 bg-background/40 p-4 ${isDragging ? "shadow-lg ring-1 ring-ring" : ""}`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3">
+                                <button
+                                  type="button"
+                                  className="mt-1 flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
+                                  ref={setActivatorNodeRef}
+                                  {...listeners}
+                                  {...attributes}
+                                >
+                                  <GripVertical className="h-4 w-4" />
+                                </button>
+                                <div className="flex flex-col gap-2">
+                                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                                    Question {questionIndex + 1}
+                                  </span>
+                                  <FormField
+                                    control={form.control}
+                                    name={`questions.${questionIndex}.question`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Question text</FormLabel>
+                                        <FormControl>
+                                          <Textarea
+                                            rows={3}
+                                            placeholder="Enter the question"
+                                            {...field}
+                                          />
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => remove(questionIndex)}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+
+                            <div className="grid gap-3">
+                              <p className="text-sm font-medium">Options</p>
+                              <DndContext
+                                sensors={dndSensors}
+                                onDragEnd={handleOptionDragEnd}
+                              >
+                                <SortableContext
+                                  items={optionIds}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  <div className="grid gap-2">
+                                    {optionValues.map((option, optionIndex) => (
+                                      <SortableItem
+                                        key={optionIds[optionIndex]}
+                                        id={optionIds[optionIndex]}
+                                      >
+                                        {({
+                                          attributes: optionAttributes,
+                                          listeners: optionListeners,
+                                          setActivatorNodeRef: setOptionActivatorNodeRef,
+                                          isDragging: isOptionDragging,
+                                        }) => (
+                                          <div
+                                            className={`flex flex-col gap-2 rounded-md border border-border/50 bg-background/80 p-3 ${isOptionDragging ? "shadow-md ring-1 ring-ring" : ""}`}
+                                          >
+                                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                              <button
+                                                type="button"
+                                                className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
+                                                ref={setOptionActivatorNodeRef}
+                                                {...optionListeners}
+                                                {...optionAttributes}
+                                              >
+                                                <GripVertical className="h-4 w-4" />
+                                              </button>
+                                              <div className="flex flex-1 items-center gap-3">
+                                                <input
+                                                  type="radio"
+                                                  name={`correct-${questionField.id}`}
+                                                  checked={correctIndex === optionIndex}
+                                                  onChange={() =>
+                                                    setCorrectOption(questionIndex, optionIndex)
+                                                  }
+                                                />
+                                                <Input
+                                                  value={option}
+                                                  onChange={(event) => {
+                                                    const updated = [...optionValues];
+                                                    updated[optionIndex] = event.target.value;
+                                                    form.setValue(
+                                                      `questions.${questionIndex}.options`,
+                                                      updated,
+                                                    );
+                                                  }}
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="flex justify-end">
+                                              <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() =>
+                                                  removeOption(questionIndex, optionIndex)
+                                                }
+                                              >
+                                                Remove option
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </SortableItem>
+                                    ))}
+                                  </div>
+                                </SortableContext>
+                              </DndContext>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addOption(questionIndex)}
+                              >
+                                Add option
+                              </Button>
+                            </div>
+
+                            <FormField
+                              control={form.control}
+                              name={`questions.${questionIndex}.explanation`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Explanation (optional)</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      rows={2}
+                                      placeholder="Explain why the correct answer is right"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
                         )}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => remove(questionIndex)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-
-                    <div className="grid gap-3">
-                      <p className="text-sm font-medium">Options</p>
-                      {options.map((option, optionIndex) => (
-                        <div key={`${questionField.id}-${optionIndex}`} className="flex flex-col gap-2 rounded-md border border-border/50 bg-background/80 p-3">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name={`correct-${questionField.id}`}
-                              checked={correctIndex === optionIndex}
-                              onChange={() => setCorrectOption(questionIndex, optionIndex)}
-                            />
-                            <Input
-                              value={option}
-                              onChange={(event) => {
-                                const updated = [...options];
-                                updated[optionIndex] = event.target.value;
-                                form.setValue(`questions.${questionIndex}.options`, updated);
-                              }}
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeOption(questionIndex, optionIndex)}
-                            >
-                              Remove option
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                      <Button type="button" variant="ghost" size="sm" onClick={() => addOption(questionIndex)}>
-                        Add option
-                      </Button>
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name={`questions.${questionIndex}.explanation`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Explanation (optional)</FormLabel>
-                          <FormControl>
-                            <Textarea rows={2} placeholder="Explain why the correct answer is right" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                );
-              })}
-            </div>
+                      </SortableItem>
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
           </section>
 
           <div className="flex flex-col gap-2 text-sm text-muted-foreground">

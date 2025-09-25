@@ -1,12 +1,26 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -37,6 +51,8 @@ import {
   type ChapterFormValues,
   contentOrderItemSchema,
 } from "@/features/admin/chapters/schema";
+import { SortableItem } from "@/features/admin/shared/components/sortable-item";
+import { GripVertical } from "lucide-react";
 
 interface ChapterFormProps {
   chapterId?: Id<"chapters">;
@@ -81,15 +97,19 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
           title: initialData.title,
           slug: initialData.slug,
           description: initialData.description,
-          position: initialData.position?.toString() ?? "",
-          contentOrder: initialData.contentOrder ?? [],
+          contentOrder: (initialData.contentOrder ?? [])
+            .slice()
+            .sort((a, b) => {
+              const positionA = a.position ?? 0;
+              const positionB = b.position ?? 0;
+              return positionA - positionB;
+            }),
         }
       : {
           courseId: preselectedCourseId ?? "",
           title: "",
           slug: "",
           description: "",
-          position: "",
           contentOrder: [],
         },
   });
@@ -101,8 +121,11 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
         title: initialData.title,
         slug: initialData.slug,
         description: initialData.description,
-        position: initialData.position?.toString() ?? "",
-        contentOrder: initialData.contentOrder ?? [],
+        contentOrder: (initialData.contentOrder ?? []).slice().sort((a, b) => {
+          const positionA = a.position ?? 0;
+          const positionB = b.position ?? 0;
+          return positionA - positionB;
+        }),
       });
     }
   }, [initialData, form]);
@@ -132,47 +155,30 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
   const { isSubmitting } = form.formState;
   const coursesList = useMemo(() => courses ?? [], [courses]);
   const handleSubmit = async (values: ChapterFormValues) => {
-    const numericPosition =
-      values.position && values.position.trim() !== ""
-        ? Number(values.position)
-        : undefined;
-
-    if (
-      values.position &&
-      numericPosition !== undefined &&
-      Number.isNaN(numericPosition)
-    ) {
-      toast.error("Position must be a number");
-      return;
-    }
-
     let parsedContent:
       | Array<{
           contentId: Id<"lessons"> | Id<"quizzes">;
           contentType: "lesson" | "quiz";
-          position?: number;
         }>
       | undefined;
     try {
-      parsedContent = values.contentOrder
-        ?.map((item) => contentOrderItemSchema.parse(item))
-        .map((item, index) => ({
-          ...item,
-          contentId: item.contentId as Id<"lessons"> | Id<"quizzes">,
-          position: item.position ?? index + 1,
-        }));
+      parsedContent = values.contentOrder?.map((item) => {
+        const parsed = contentOrderItemSchema.parse(item);
+        return {
+          contentId: parsed.contentId as Id<"lessons"> | Id<"quizzes">,
+          contentType: parsed.contentType,
+        };
+      });
     } catch {
       toast.error("Check the content order entries before saving");
       return;
     }
 
     const payload = {
-      courseId: values.courseId as Id<"courses">,
       title: values.title,
       slug: values.slug,
       description: values.description,
-      position: numericPosition,
-      contentOrder: parsedContent,
+      contentOrder: parsedContent ?? [],
     };
 
     try {
@@ -180,7 +186,10 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
         await updateChapter({ chapterId, ...payload });
         toast.success("Chapter updated");
       } else {
-        const id = await createChapter({ ...payload });
+        const id = await createChapter({
+          ...payload,
+          courseId: values.courseId as Id<"courses">,
+        });
         toast.success("Chapter created");
         router.replace(`/admin/chapters/${id}`);
         return;
@@ -216,18 +225,55 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
     [initialData],
   );
 
-  const moveItem = (index: number, direction: "up" | "down") => {
-    if (direction === "up" && index > 0) {
-      move(index, index - 1);
-    }
-    if (direction === "down" && index < contentFields.length - 1) {
-      move(index, index + 1);
-    }
-  };
+  const lessons = useQuery(
+    api.admin.lessons.queries.list,
+    chapterId ? { chapterId } : "skip",
+  );
+  const quizzes = useQuery(
+    api.admin.quizzes.queries.list,
+    chapterId ? { chapterId } : "skip",
+  );
+
+  const lessonsList = useMemo(() => lessons ?? [], [lessons]);
+  const quizzesList = useMemo(() => quizzes ?? [], [quizzes]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleContentDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      const activeIndex = contentFields.findIndex(
+        (field) => field.id === active.id,
+      );
+      const overIndex = contentFields.findIndex(
+        (field) => field.id === over.id,
+      );
+
+      if (activeIndex === -1 || overIndex === -1) {
+        return;
+      }
+
+      move(activeIndex, overIndex);
+    },
+    [contentFields, move],
+  );
 
   const addContentItem = () => {
-    append({ contentId: "", contentType: "lesson", position: null });
+    append({ contentId: "", contentType: "lesson" });
   };
+
+  const contentOrderingDisabled = !chapterId;
 
   return (
     <AdminContainer className="flex flex-col gap-8">
@@ -306,19 +352,6 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="position"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Position (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Numeric order" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
             <FormField
               control={form.control}
@@ -347,90 +380,164 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
                 variant="ghost"
                 size="sm"
                 onClick={addContentItem}
+                disabled={contentOrderingDisabled}
               >
                 Add entry
               </Button>
             </div>
-            {contentFields.length === 0 ? (
+            {contentOrderingDisabled ? (
               <p className="text-sm text-muted-foreground">
-                Content order controls the sequence of lessons and quizzes. Use
-                the buttons above to add entries once the lesson or quiz exists.
+                Save this chapter first to organise lessons and quizzes. Once
+                the chapter exists you can drag items here to control the
+                learning flow.
+              </p>
+            ) : contentFields.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Content order controls the sequence of lessons and quizzes. Add
+                entries once the lesson or quiz exists, then drag to reorder.
               </p>
             ) : (
-              <div className="grid gap-3">
-                {contentFields.map((field, index) => (
-                  <div
-                    key={field.id}
-                    className="grid gap-3 rounded-md border border-border/60 bg-background/40 px-4 py-3 md:grid-cols-[1fr_160px_auto]"
-                  >
-                    <FormField
-                      control={form.control}
-                      name={`contentOrder.${index}.contentId`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="sr-only">Content ID</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Lesson or quiz ID" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`contentOrder.${index}.contentType`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="sr-only">Type</FormLabel>
-                          <FormControl>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
+              <DndContext sensors={sensors} onDragEnd={handleContentDragEnd}>
+                <SortableContext
+                  items={contentFields.map((field) => field.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="grid gap-3">
+                    {contentFields.map((field, index) => (
+                      <SortableItem key={field.id} id={field.id}>
+                        {({
+                          attributes,
+                          listeners,
+                          setActivatorNodeRef,
+                          isDragging,
+                        }) => {
+                          const typePath =
+                            `contentOrder.${index}.contentType` as const;
+                          const contentPath =
+                            `contentOrder.${index}.contentId` as const;
+                          const watchedType = form.watch(typePath) as
+                            | "lesson"
+                            | "quiz"
+                            | undefined;
+                          const selectedType =
+                            watchedType ?? field.contentType ?? "lesson";
+                          const options =
+                            selectedType === "lesson"
+                              ? lessonsList
+                              : quizzesList;
+                          const hasOptions = options.length > 0;
+
+                          return (
+                            <div
+                              className={`grid gap-3 rounded-md border border-border/60 bg-background/40 px-4 py-3 md:grid-cols-[auto_1fr_1fr_auto] ${isDragging ? "shadow-lg ring-1 ring-ring" : ""}`}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="lesson">Lesson</SelectItem>
-                                <SelectItem value="quiz">Quiz</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => moveItem(index, "up")}
-                        disabled={index === 0}
-                      >
-                        Up
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => moveItem(index, "down")}
-                        disabled={index === contentFields.length - 1}
-                      >
-                        Down
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => remove(index)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
+                              <div className="flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
+                                  ref={setActivatorNodeRef}
+                                  {...listeners}
+                                  {...attributes}
+                                >
+                                  <GripVertical className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <FormField
+                                control={form.control}
+                                name={typePath}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="sr-only">
+                                      Type
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Select
+                                        value={field.value ?? "lesson"}
+                                        onValueChange={(value) => {
+                                          field.onChange(value);
+                                          form.setValue(contentPath, "");
+                                        }}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="lesson">
+                                            Lesson
+                                          </SelectItem>
+                                          <SelectItem value="quiz">
+                                            Quiz
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name={contentPath}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="sr-only">
+                                      Content
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Select
+                                        disabled={!hasOptions}
+                                        value={field.value ?? ""}
+                                        onValueChange={field.onChange}
+                                      >
+                                        <SelectTrigger>
+                                          <SelectValue
+                                            placeholder={
+                                              hasOptions
+                                                ? selectedType === "lesson"
+                                                  ? "Select lesson"
+                                                  : "Select quiz"
+                                                : selectedType === "lesson"
+                                                  ? "No lessons yet"
+                                                  : "No quizzes yet"
+                                            }
+                                          />
+                                        </SelectTrigger>
+                                        {hasOptions ? (
+                                          <SelectContent>
+                                            {options.map((item) => (
+                                              <SelectItem
+                                                key={item._id}
+                                                value={item._id}
+                                              >
+                                                {item.title}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        ) : null}
+                                      </Select>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => remove(index)}
+                                >
+                                  Remove
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        }}
+                      </SortableItem>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </SortableContext>
+              </DndContext>
             )}
           </section>
 

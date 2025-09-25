@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "linear.app",
       },
+      {
+        protocol: "https",
+        hostname: "superb-woodpecker-318.convex.cloud",
+      },
     ],
   },
 };

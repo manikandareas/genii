@@ -1,41 +1,45 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChangeEvent, DragEvent } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
+import { GripVertical, Plus, UploadCloud } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { ChangeEvent, DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Plus, UploadCloud } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import AdminContainer from "@/features/admin/components/container";
+import {
+  courseFormSchema,
+  difficultyOptions,
+  type CourseFormValues,
+} from "@/features/admin/courses/schema";
+import { EmptyState } from "@/features/admin/shared/components/empty-state";
 import { PageHeader } from "@/features/admin/shared/components/page-header";
-import { formatDate } from "@/features/admin/shared/utils/format-date";
+import { SortableItem } from "@/features/admin/shared/components/sortable-item";
 import { formatBytes } from "@/features/admin/shared/utils/format-bytes";
+import { formatDate } from "@/features/admin/shared/utils/format-date";
 import { slugify } from "@/features/admin/shared/utils/slugify";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/features/shared/components/ui/form";
-import { Input } from "@/features/shared/components/ui/input";
-import { Textarea } from "@/features/shared/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/features/shared/components/ui/select";
-import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import { Button } from "@/features/shared/components/ui/button";
+import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import {
   Dialog,
   DialogClose,
@@ -46,13 +50,25 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/features/shared/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import {
-  courseFormSchema,
-  difficultyOptions,
-  type CourseFormValues,
-} from "@/features/admin/courses/schema";
-import { EmptyState } from "@/features/admin/shared/components/empty-state";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/features/shared/components/ui/form";
+import { Input } from "@/features/shared/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/features/shared/components/ui/select";
+import { Textarea } from "@/features/shared/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface CourseFormProps {
   courseId?: Id<"courses">;
@@ -101,6 +117,7 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
   const createAssetFromUpload = useMutation(
     api.admin.assets.mutations.createFromUpload,
   );
+  const reorderChapters = useMutation(api.admin.chapters.mutations.reorder);
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
@@ -195,6 +212,114 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
   const selectedTopicIds = form.watch("topicIds");
   const topicsList = useMemo(() => topics ?? [], [topics]);
   const chaptersList = useMemo(() => chapters ?? [], [chapters]);
+  const sortedChapters = useMemo(
+    () =>
+      chaptersList.slice().sort((a, b) => {
+        const positionA = a.position ?? a._creationTime;
+        const positionB = b.position ?? b._creationTime;
+        return positionA - positionB;
+      }),
+    [chaptersList],
+  );
+  const [chapterOrder, setChapterOrder] = useState<Id<"chapters">[]>([]);
+  const [isReorderingChapters, setIsReorderingChapters] = useState(false);
+
+  useEffect(() => {
+    if (!courseId) {
+      setChapterOrder([]);
+      return;
+    }
+
+    if (sortedChapters.length === 0) {
+      setChapterOrder([]);
+      return;
+    }
+
+    setChapterOrder((previous) => {
+      const validPrevious = previous.filter((id) =>
+        sortedChapters.some((chapter) => chapter._id === id),
+      );
+
+      if (validPrevious.length === sortedChapters.length) {
+        return validPrevious;
+      }
+
+      return sortedChapters.map((chapter) => chapter._id);
+    });
+  }, [sortedChapters, courseId]);
+
+  const orderedChapters = useMemo(() => {
+    if (chapterOrder.length === 0) {
+      return sortedChapters;
+    }
+    const lookup = new Map(
+      sortedChapters.map((chapter) => [chapter._id, chapter]),
+    );
+    return chapterOrder
+      .map((chapterId) => lookup.get(chapterId))
+      .filter((chapter): chapter is (typeof sortedChapters)[number] =>
+        Boolean(chapter),
+      );
+  }, [chapterOrder, sortedChapters]);
+
+  const chapterSensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleChapterDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      if (isReorderingChapters) {
+        return;
+      }
+
+      const { active, over } = event;
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      const oldIndex = chapterOrder.findIndex((id) => id === active.id);
+      const newIndex = chapterOrder.findIndex((id) => id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+
+      const previousOrder = chapterOrder;
+      const nextOrder = arrayMove(previousOrder, oldIndex, newIndex);
+      setChapterOrder(nextOrder);
+
+      if (!courseId) {
+        return;
+      }
+
+      setIsReorderingChapters(true);
+
+      reorderChapters({
+        courseId,
+        orderedChapterIds: nextOrder as Id<"chapters">[],
+      })
+        .then(() => {
+          toast.success("Chapter order updated");
+        })
+        .catch((error) => {
+          setChapterOrder(previousOrder);
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to update chapter order";
+          toast.error(message);
+        })
+        .finally(() => {
+          setIsReorderingChapters(false);
+        });
+    },
+    [chapterOrder, courseId, isReorderingChapters, reorderChapters, toast],
+  );
   const assetsList = useMemo(() => {
     if (!assets) return [];
     // Since we're not using pagination, assets should be an array
@@ -851,10 +976,12 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
                             "image/",
                           ) ? (
                             <div className="h-12 w-12 overflow-hidden rounded-md border border-border/60">
-                              <img
+                              <Image
                                 src={selectedThumbnailAsset.url}
                                 alt={selectedThumbnailAsset.filename}
                                 className="h-full w-full object-cover"
+                                width={48}
+                                height={48}
                               />
                             </div>
                           ) : null}
@@ -941,31 +1068,80 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
                 <p className="text-sm text-muted-foreground">
                   Loading chapters...
                 </p>
-              ) : chaptersList.length === 0 ? (
+              ) : orderedChapters.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No chapters yet. Use the button above to create the first one.
                 </p>
               ) : (
-                <ul className="grid gap-2">
-                  {chaptersList.map((chapter) => (
-                    <li
-                      key={chapter._id}
-                      className="flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-4 py-3"
+                <div className="grid gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    Drag the handle to reorder chapters.
+                  </p>
+                  {isReorderingChapters ? (
+                    <p className="text-xs text-muted-foreground">
+                      Saving order…
+                    </p>
+                  ) : null}
+                  <DndContext
+                    sensors={chapterSensors}
+                    onDragEnd={handleChapterDragEnd}
+                  >
+                    <SortableContext
+                      items={orderedChapters.map((chapter) => chapter._id)}
+                      strategy={verticalListSortingStrategy}
                     >
-                      <div>
-                        <p className="text-sm font-medium">{chapter.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {chapter.slug}
-                        </p>
+                      <div className="grid gap-2">
+                        {orderedChapters.map((chapter, index) => (
+                          <SortableItem key={chapter._id} id={chapter._id}>
+                            {({
+                              attributes,
+                              listeners,
+                              setActivatorNodeRef,
+                              isDragging,
+                            }) => (
+                              <div
+                                className={`flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-4 py-3 ${isDragging ? "shadow-lg ring-1 ring-ring" : ""}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/70 text-muted-foreground hover:text-foreground"
+                                    ref={setActivatorNodeRef}
+                                    {...listeners}
+                                    {...attributes}
+                                  >
+                                    <GripVertical className="h-4 w-4" />
+                                  </button>
+                                  <div>
+                                    <p className="text-sm font-medium">
+                                      {chapter.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {chapter.slug}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs text-muted-foreground">
+                                    #
+                                    {(chapter.position ?? index + 1).toString()}
+                                  </span>
+                                  <Button asChild variant="ghost" size="sm">
+                                    <Link
+                                      href={`/admin/chapters/${chapter._id}`}
+                                    >
+                                      Edit
+                                    </Link>
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </SortableItem>
+                        ))}
                       </div>
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/admin/chapters/${chapter._id}`}>
-                          Edit
-                        </Link>
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
+                    </SortableContext>
+                  </DndContext>
+                </div>
               )}
             </section>
           ) : null}

@@ -1,8 +1,23 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { ensureAdmin } from "../../utils";
+import type { Id } from "../../_generated/dataModel";
 
 const now = () => Date.now();
+
+const normalizeContentOrder = (
+  order:
+    | Array<{
+        contentId: Id<"lessons"> | Id<"quizzes">;
+        contentType: "lesson" | "quiz";
+        position?: number | null;
+      }>
+    | undefined,
+) =>
+  (order ?? []).map((entry, index) => ({
+    ...entry,
+    position: index + 1,
+  }));
 
 export const create = mutation({
   args: {
@@ -132,7 +147,7 @@ export const update = mutation({
         );
         if (nextOrder.length !== previousChapter.contentOrder.length) {
           await ctx.db.patch(existing.chapterId, {
-            contentOrder: nextOrder,
+            contentOrder: normalizeContentOrder(nextOrder),
             updatedAt: now(),
           });
         }
@@ -167,7 +182,7 @@ export const remove = mutation({
       );
       if (filtered.length !== chapter.contentOrder.length) {
         await ctx.db.patch(chapter._id, {
-          contentOrder: filtered,
+          contentOrder: normalizeContentOrder(filtered),
           updatedAt: now(),
         });
       }
