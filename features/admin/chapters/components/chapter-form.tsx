@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -78,16 +79,24 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
   const searchParams = useSearchParams();
   const preselectedCourseId = searchParams?.get("courseId");
 
-  const courses = useQuery(api.admin.courses.queries.list, {
-    search: undefined,
-    difficulty: undefined,
-    featured: undefined,
-    topicId: undefined,
-  });
+  const { data: courses } = useQuery(
+    convexQuery(api.admin.courses.queries.list, {
+      search: undefined,
+      difficulty: undefined,
+      featured: undefined,
+      topicId: undefined,
+    }),
+  );
 
-  const createChapter = useMutation(api.admin.chapters.mutations.create);
-  const updateChapter = useMutation(api.admin.chapters.mutations.update);
-  const removeChapter = useMutation(api.admin.chapters.mutations.remove);
+  const { mutateAsync: createChapter } = useMutation({
+    mutationFn: useConvexMutation(api.admin.chapters.mutations.create),
+  });
+  const { mutateAsync: updateChapter } = useMutation({
+    mutationFn: useConvexMutation(api.admin.chapters.mutations.update),
+  });
+  const { mutateAsync: removeChapter } = useMutation({
+    mutationFn: useConvexMutation(api.admin.chapters.mutations.remove),
+  });
 
   const form = useForm<ChapterFormValues>({
     resolver: zodResolver(chapterFormSchema),
@@ -225,13 +234,17 @@ export function ChapterForm({ chapterId, initialData }: ChapterFormProps) {
     [initialData],
   );
 
-  const lessons = useQuery(
-    api.admin.lessons.queries.list,
-    chapterId ? { chapterId } : "skip",
+  const { data: lessons } = useQuery(
+    convexQuery(
+      api.admin.lessons.queries.list,
+      chapterId ? { chapterId } : "skip",
+    ),
   );
-  const quizzes = useQuery(
-    api.admin.quizzes.queries.list,
-    chapterId ? { chapterId } : "skip",
+  const { data: quizzes } = useQuery(
+    convexQuery(
+      api.admin.quizzes.queries.list,
+      chapterId ? { chapterId } : "skip",
+    ),
   );
 
   const lessonsList = useMemo(() => lessons ?? [], [lessons]);

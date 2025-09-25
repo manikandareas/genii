@@ -1,7 +1,8 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { startTransition, useEffect, useMemo, useState } from "react";
@@ -93,12 +94,14 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
   const preselectedCourseId = searchParams?.get("courseId");
   const preselectedChapterId = searchParams?.get("chapterId");
 
-  const courses = useQuery(api.admin.courses.queries.list, {
-    search: undefined,
-    difficulty: undefined,
-    featured: undefined,
-    topicId: undefined,
-  });
+  const { data: courses } = useQuery(
+    convexQuery(api.admin.courses.queries.list, {
+      search: undefined,
+      difficulty: undefined,
+      featured: undefined,
+      topicId: undefined,
+    }),
+  );
 
   const initialContent = useMemo(
     () => toPlateValue(initialData?.content),
@@ -163,17 +166,25 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
     editor.children = nextEditorContent;
   }, [initialData, initialContent, form, editor]);
 
-  const createLesson = useMutation(api.admin.lessons.mutations.create);
-  const updateLesson = useMutation(api.admin.lessons.mutations.update);
-  const removeLesson = useMutation(api.admin.lessons.mutations.remove);
+  const { mutateAsync: createLesson } = useMutation({
+    mutationFn: useConvexMutation(api.admin.lessons.mutations.create),
+  });
+  const { mutateAsync: updateLesson } = useMutation({
+    mutationFn: useConvexMutation(api.admin.lessons.mutations.update),
+  });
+  const { mutateAsync: removeLesson } = useMutation({
+    mutationFn: useConvexMutation(api.admin.lessons.mutations.remove),
+  });
 
   const selectedCourseId = form.watch("courseId");
-  const chapters = useQuery(api.admin.chapters.queries.list, {
-    search: undefined,
-    courseId: selectedCourseId
-      ? (selectedCourseId as Id<"courses">)
-      : undefined,
-  });
+  const { data: chapters } = useQuery(
+    convexQuery(api.admin.chapters.queries.list, {
+      search: undefined,
+      courseId: selectedCourseId
+        ? (selectedCourseId as Id<"courses">)
+        : undefined,
+    }),
+  );
 
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(
     Boolean(initialData),

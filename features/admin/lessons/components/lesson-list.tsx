@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -26,29 +27,40 @@ export function LessonList() {
   const [courseFilter, setCourseFilter] = useState<string>("all");
   const [chapterFilter, setChapterFilter] = useState<string>("all");
 
-  const courses = useQuery(api.admin.courses.queries.list, {
-    search: undefined,
-    difficulty: undefined,
-    featured: undefined,
-    topicId: undefined,
-  });
+  const { data: courses, isPending: coursesPending } = useQuery(
+    convexQuery(api.admin.courses.queries.list, {
+      search: undefined,
+      difficulty: undefined,
+      featured: undefined,
+      topicId: undefined,
+    }),
+  );
 
-  const chapters = useQuery(api.admin.chapters.queries.list, {
-    search: undefined,
-    courseId: courseFilter !== "all" ? (courseFilter as Id<"courses">) : undefined,
-  });
+  const { data: chapters, isPending: chaptersPending } = useQuery(
+    convexQuery(api.admin.chapters.queries.list, {
+      search: undefined,
+      courseId:
+        courseFilter !== "all" ? (courseFilter as Id<"courses">) : undefined,
+    }),
+  );
 
-  const lessons = useQuery(api.admin.lessons.queries.list, {
-    search: search || undefined,
-    courseId: courseFilter !== "all" ? (courseFilter as Id<"courses">) : undefined,
-    chapterId: chapterFilter !== "all" ? (chapterFilter as Id<"chapters">) : undefined,
-  });
+  const { data: lessons, isPending: lessonsPending } = useQuery(
+    convexQuery(api.admin.lessons.queries.list, {
+      search: search || undefined,
+      courseId:
+        courseFilter !== "all" ? (courseFilter as Id<"courses">) : undefined,
+      chapterId:
+        chapterFilter !== "all"
+          ? (chapterFilter as Id<"chapters">)
+          : undefined,
+    }),
+  );
 
   useEffect(() => {
     setChapterFilter("all");
   }, [courseFilter]);
 
-  const isLoading = lessons === undefined || chapters === undefined || courses === undefined;
+  const isLoading = lessonsPending || chaptersPending || coursesPending;
   const lessonItems = useMemo(() => lessons ?? [], [lessons]);
   const courseItems = useMemo(() => courses ?? [], [courses]);
   const chapterItems = useMemo(() => chapters ?? [], [chapters]);

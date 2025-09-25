@@ -15,7 +15,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  convexQuery,
+  useConvexMutation,
+  useConvexPaginatedQuery,
+} from "@convex-dev/react-query";
 import { GripVertical, Plus, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -98,16 +103,20 @@ interface CourseFormProps {
 export function CourseForm({ courseId, initialData }: CourseFormProps) {
   const router = useRouter();
 
-  const topics = useQuery(api.admin.topics.queries.list, { search: undefined });
-  const chapters = useQuery(api.admin.chapters.queries.list, {
-    courseId: courseId ?? undefined,
-    search: undefined,
-  });
+  const { data: topics } = useQuery(
+    convexQuery(api.admin.topics.queries.list, { search: undefined }),
+  );
+  const { data: chapters } = useQuery(
+    convexQuery(api.admin.chapters.queries.list, {
+      courseId: courseId ?? undefined,
+      search: undefined,
+    }),
+  );
   const {
     results: assetResults,
     status: assetsStatus,
     loadMore: loadMoreAssets,
-  } = usePaginatedQuery(
+  } = useConvexPaginatedQuery(
     api.admin.assets.queries.list,
     {
       search: undefined,
@@ -115,16 +124,24 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
     { initialNumItems: 20 },
   );
 
-  const createCourse = useMutation(api.admin.courses.mutations.create);
-  const updateCourse = useMutation(api.admin.courses.mutations.update);
-  const removeCourse = useMutation(api.admin.courses.mutations.remove);
-  const generateUploadUrl = useMutation(
-    api.admin.assets.mutations.generateUploadUrl,
-  );
-  const createAssetFromUpload = useMutation(
-    api.admin.assets.mutations.createFromUpload,
-  );
-  const reorderChapters = useMutation(api.admin.chapters.mutations.reorder);
+  const { mutateAsync: createCourse } = useMutation({
+    mutationFn: useConvexMutation(api.admin.courses.mutations.create),
+  });
+  const { mutateAsync: updateCourse } = useMutation({
+    mutationFn: useConvexMutation(api.admin.courses.mutations.update),
+  });
+  const { mutateAsync: removeCourse } = useMutation({
+    mutationFn: useConvexMutation(api.admin.courses.mutations.remove),
+  });
+  const { mutateAsync: generateUploadUrl } = useMutation({
+    mutationFn: useConvexMutation(api.admin.assets.mutations.generateUploadUrl),
+  });
+  const { mutateAsync: createAssetFromUpload } = useMutation({
+    mutationFn: useConvexMutation(api.admin.assets.mutations.createFromUpload),
+  });
+  const { mutateAsync: reorderChapters } = useMutation({
+    mutationFn: useConvexMutation(api.admin.chapters.mutations.reorder),
+  });
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),

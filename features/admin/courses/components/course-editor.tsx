@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { CourseForm } from "@/features/admin/courses/components/course-form";
@@ -13,9 +14,11 @@ interface CourseEditorProps {
 }
 
 export function CourseEditor({ courseId }: CourseEditorProps) {
-  const course = useQuery(api.admin.courses.queries.getById, { courseId });
+  const { data: course, isPending } = useQuery(
+    convexQuery(api.admin.courses.queries.getById, { courseId }),
+  );
 
-  if (course === undefined) {
+  if (isPending) {
     return (
       <AdminContainer className="flex flex-col gap-8">
         <CoursesSkeleton />

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -98,12 +99,14 @@ export function QuizForm({ quizId, initialData }: QuizFormProps) {
   const preselectedCourseId = searchParams?.get("courseId");
   const preselectedChapterId = searchParams?.get("chapterId");
 
-  const courses = useQuery(api.admin.courses.queries.list, {
-    search: undefined,
-    difficulty: undefined,
-    featured: undefined,
-    topicId: undefined,
-  });
+  const { data: courses } = useQuery(
+    convexQuery(api.admin.courses.queries.list, {
+      search: undefined,
+      difficulty: undefined,
+      featured: undefined,
+      topicId: undefined,
+    }),
+  );
 
   const form = useForm<QuizFormValues>({
     resolver: zodResolver(quizFormSchema),
@@ -160,14 +163,24 @@ export function QuizForm({ quizId, initialData }: QuizFormProps) {
   }, [initialData, form]);
 
   const selectedCourseId = form.watch("courseId");
-  const chapters = useQuery(api.admin.chapters.queries.list, {
-    search: undefined,
-    courseId: selectedCourseId ? (selectedCourseId as Id<"courses">) : undefined,
-  });
+  const { data: chapters } = useQuery(
+    convexQuery(api.admin.chapters.queries.list, {
+      search: undefined,
+      courseId: selectedCourseId
+        ? (selectedCourseId as Id<"courses">)
+        : undefined,
+    }),
+  );
 
-  const createQuiz = useMutation(api.admin.quizzes.mutations.create);
-  const updateQuiz = useMutation(api.admin.quizzes.mutations.update);
-  const removeQuiz = useMutation(api.admin.quizzes.mutations.remove);
+  const { mutateAsync: createQuiz } = useMutation({
+    mutationFn: useConvexMutation(api.admin.quizzes.mutations.create),
+  });
+  const { mutateAsync: updateQuiz } = useMutation({
+    mutationFn: useConvexMutation(api.admin.quizzes.mutations.update),
+  });
+  const { mutateAsync: removeQuiz } = useMutation({
+    mutationFn: useConvexMutation(api.admin.quizzes.mutations.remove),
+  });
 
   const { fields: questionFields, append, remove, move } = useFieldArray({
     name: "questions",

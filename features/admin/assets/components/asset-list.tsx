@@ -1,19 +1,23 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useMutation } from "@tanstack/react-query";
+import {
+  useConvexMutation,
+  useConvexPaginatedQuery,
+} from "@convex-dev/react-query";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import AdminContainer from "@/features/admin/components/container";
-import { PageHeader } from "@/features/admin/shared/components/page-header";
-import { ListToolbar } from "@/features/admin/shared/components/list-toolbar";
-import { EmptyState } from "@/features/admin/shared/components/empty-state";
-import { Button } from "@/features/shared/components/ui/button";
-import { formatDate } from "@/features/admin/shared/utils/format-date";
-import { formatBytes } from "@/features/admin/shared/utils/format-bytes";
 import { AssetsSkeleton } from "@/features/admin/assets/components/asset-list.skeleton";
+import AdminContainer from "@/features/admin/components/container";
+import { EmptyState } from "@/features/admin/shared/components/empty-state";
+import { ListToolbar } from "@/features/admin/shared/components/list-toolbar";
+import { PageHeader } from "@/features/admin/shared/components/page-header";
+import { formatBytes } from "@/features/admin/shared/utils/format-bytes";
+import { formatDate } from "@/features/admin/shared/utils/format-date";
+import { Button } from "@/features/shared/components/ui/button";
 
 export function AssetList() {
   const [search, setSearch] = useState("");
@@ -24,7 +28,7 @@ export function AssetList() {
     results: assetResults,
     status: assetsStatus,
     loadMore: loadMoreAssets,
-  } = usePaginatedQuery(
+  } = useConvexPaginatedQuery(
     api.admin.assets.queries.list,
     {
       search: search.trim() ? search : undefined,
@@ -32,14 +36,22 @@ export function AssetList() {
     { initialNumItems: 20 },
   );
 
-  const generateUploadUrl = useMutation(
-    api.admin.assets.mutations.generateUploadUrl,
-  );
-  const createFromUpload = useMutation(
-    api.admin.assets.mutations.createFromUpload,
-  );
-  const removeAsset = useMutation(api.admin.assets.mutations.remove);
-  const touchAsset = useMutation(api.admin.assets.mutations.touch);
+  const { mutateAsync: generateUploadUrl } = useMutation({
+    mutationFn: useConvexMutation(
+      api.admin.assets.mutations.generateUploadUrl,
+    ),
+  });
+  const { mutateAsync: createFromUpload } = useMutation({
+    mutationFn: useConvexMutation(
+      api.admin.assets.mutations.createFromUpload,
+    ),
+  });
+  const { mutateAsync: removeAsset } = useMutation({
+    mutationFn: useConvexMutation(api.admin.assets.mutations.remove),
+  });
+  const { mutateAsync: touchAsset } = useMutation({
+    mutationFn: useConvexMutation(api.admin.assets.mutations.touch),
+  });
 
   const assetItems = assetResults;
   const isLoading = assetsStatus === "LoadingFirstPage";

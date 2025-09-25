@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -30,18 +31,23 @@ export function CourseList() {
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [topicFilter, setTopicFilter] = useState<string>("all");
 
-  const topics = useQuery(api.admin.topics.queries.list, { search: undefined });
-  const courses = useQuery(api.admin.courses.queries.list, {
-    search: search || undefined,
-    difficulty:
-      difficulty !== "all"
-        ? (difficulty as (typeof difficultyOptions)[number])
-        : undefined,
-    featured: featuredOnly ? true : undefined,
-    topicId: topicFilter !== "all" ? (topicFilter as Id<"topics">) : undefined,
-  });
+  const { data: topics, isPending: topicsPending } = useQuery(
+    convexQuery(api.admin.topics.queries.list, { search: undefined }),
+  );
+  const { data: courses, isPending: coursesPending } = useQuery(
+    convexQuery(api.admin.courses.queries.list, {
+      search: search || undefined,
+      difficulty:
+        difficulty !== "all"
+          ? (difficulty as (typeof difficultyOptions)[number])
+          : undefined,
+      featured: featuredOnly ? true : undefined,
+      topicId:
+        topicFilter !== "all" ? (topicFilter as Id<"topics">) : undefined,
+    }),
+  );
 
-  const isLoading = courses === undefined || topics === undefined;
+  const isLoading = coursesPending || topicsPending;
   const courseItems = useMemo(() => courses ?? [], [courses]);
   const topicItems = useMemo(() => topics ?? [], [topics]);
 

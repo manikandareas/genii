@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { QuizForm } from "@/features/admin/quizzes/components/quiz-form";
@@ -13,9 +14,11 @@ interface QuizEditorProps {
 }
 
 export function QuizEditor({ quizId }: QuizEditorProps) {
-  const quiz = useQuery(api.admin.quizzes.queries.getById, { quizId });
+  const { data: quiz, isPending } = useQuery(
+    convexQuery(api.admin.quizzes.queries.getById, { quizId }),
+  );
 
-  if (quiz === undefined) {
+  if (isPending) {
     return (
       <AdminContainer className="flex flex-col gap-8">
         <QuizzesSkeleton />

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 
 import AdminContainer from "@/features/admin/components/container";
@@ -9,27 +10,37 @@ import { PageHeader } from "@/features/admin/shared/components/page-header";
 import { Button } from "@/features/shared/components/ui/button";
 
 export function AdminDashboardView() {
-  const topics = useQuery(api.admin.topics.queries.list, { search: undefined });
-  const courses = useQuery(api.admin.courses.queries.list, {
-    search: undefined,
-    difficulty: undefined,
-    featured: undefined,
-    topicId: undefined,
-  });
-  const chapters = useQuery(api.admin.chapters.queries.list, {
-    search: undefined,
-    courseId: undefined,
-  });
-  const lessons = useQuery(api.admin.lessons.queries.list, {
-    search: undefined,
-    courseId: undefined,
-    chapterId: undefined,
-  });
-  const quizzes = useQuery(api.admin.quizzes.queries.list, {
-    search: undefined,
-    courseId: undefined,
-    chapterId: undefined,
-  });
+  const { data: topics } = useQuery(
+    convexQuery(api.admin.topics.queries.list, { search: undefined }),
+  );
+  const { data: courses } = useQuery(
+    convexQuery(api.admin.courses.queries.list, {
+      search: undefined,
+      difficulty: undefined,
+      featured: undefined,
+      topicId: undefined,
+    }),
+  );
+  const { data: chapters } = useQuery(
+    convexQuery(api.admin.chapters.queries.list, {
+      search: undefined,
+      courseId: undefined,
+    }),
+  );
+  const { data: lessons } = useQuery(
+    convexQuery(api.admin.lessons.queries.list, {
+      search: undefined,
+      courseId: undefined,
+      chapterId: undefined,
+    }),
+  );
+  const { data: quizzes } = useQuery(
+    convexQuery(api.admin.quizzes.queries.list, {
+      search: undefined,
+      courseId: undefined,
+      chapterId: undefined,
+    }),
+  );
 
   const stats = [
     { name: "Topics", value: topics?.length ?? 0, href: "/admin/topics" },

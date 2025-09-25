@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery } from "convex/react";
+import { useQuery } from "@tanstack/react-query";
+import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ChapterForm } from "@/features/admin/chapters/components/chapter-form";
@@ -13,9 +14,11 @@ interface ChapterEditorProps {
 }
 
 export function ChapterEditor({ chapterId }: ChapterEditorProps) {
-  const chapter = useQuery(api.admin.chapters.queries.getById, { chapterId });
+  const { data: chapter, isPending } = useQuery(
+    convexQuery(api.admin.chapters.queries.getById, { chapterId }),
+  );
 
-  if (chapter === undefined) {
+  if (isPending) {
     return (
       <AdminContainer className="flex flex-col gap-8">
         <ChaptersSkeleton />
