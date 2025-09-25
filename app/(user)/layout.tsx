@@ -1,6 +1,6 @@
-import type React from "react";
 import { Footer2 } from "@/features/landing/components/footer-section";
 import { Navbar } from "@/features/landing/components/navbar";
+import type React from "react";
 
 export default function UserLayout({
   children,

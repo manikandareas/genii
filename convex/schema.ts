@@ -30,7 +30,6 @@ export default defineSchema({
     languagePreference: v.optional(
       v.union(v.literal("id"), v.literal("en"), v.literal("mix")),
     ),
-    goal: v.optional(v.string()),
     analytics: v.optional(
       v.object({
         totalXP: v.optional(v.number()),

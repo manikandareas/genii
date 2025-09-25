@@ -2,7 +2,8 @@ import { UserJSON } from "@clerk/backend";
 import { v, Validator } from "convex/values";
 import { api } from "../_generated/api";
 import { Doc } from "../_generated/dataModel";
-import { internalMutation } from "../_generated/server";
+import { internalMutation, mutation } from "../_generated/server";
+import { ensureAuthenticated } from "../utils";
 
 export const deleteFromClerk = internalMutation({
   args: { clerkUserId: v.string() },
@@ -60,5 +61,48 @@ export const upsertFromClerk = internalMutation({
     } else {
       await ctx.db.patch(user._id, userAttributes);
     }
+  },
+});
+
+export const saveOnboarding = mutation({
+  args: {
+    learningGoals: v.array(v.string()),
+    level: v.union(
+      v.literal("beginner"),
+      v.literal("intermediate"),
+      v.literal("advanced"),
+    ),
+    languagePreference: v.union(
+      v.literal("id"),
+      v.literal("en"),
+      v.literal("mix"),
+    ),
+    explanationStyle: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ensureAuthenticated(ctx);
+
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      learningGoals: args.learningGoals,
+      level: args.level,
+      languagePreference: args.languagePreference,
+      explanationStyle: args.explanationStyle,
+      onboardingStatus: "completed",
+    });
+
+    return { success: true } as const;
   },
 });
