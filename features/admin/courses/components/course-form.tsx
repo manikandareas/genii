@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Plus, UploadCloud } from "lucide-react";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import AdminContainer from "@/features/admin/components/container";
 import { PageHeader } from "@/features/admin/shared/components/page-header";
 import { formatDate } from "@/features/admin/shared/utils/format-date";
+import { formatBytes } from "@/features/admin/shared/utils/format-bytes";
 import { slugify } from "@/features/admin/shared/utils/slugify";
 import {
   Form,
@@ -33,6 +36,17 @@ import {
 } from "@/features/shared/components/ui/select";
 import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import { Button } from "@/features/shared/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/features/shared/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import {
   courseFormSchema,
   difficultyOptions,
@@ -73,10 +87,20 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
     courseId: courseId ?? undefined,
     search: undefined,
   });
+  const assets = useQuery(api.admin.assets.queries.list, {
+    search: undefined,
+    pagination: undefined,
+  });
 
   const createCourse = useMutation(api.admin.courses.mutations.create);
   const updateCourse = useMutation(api.admin.courses.mutations.update);
   const removeCourse = useMutation(api.admin.courses.mutations.remove);
+  const generateUploadUrl = useMutation(
+    api.admin.assets.mutations.generateUploadUrl,
+  );
+  const createAssetFromUpload = useMutation(
+    api.admin.assets.mutations.createFromUpload,
+  );
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
@@ -91,7 +115,8 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
           resources: initialData.resources ?? [],
           featured: initialData.featured ?? false,
           readonly: initialData.readonly ?? false,
-          thumbnailAssetRef: initialData.thumbnail?.assetRef ?? "",
+          thumbnailAssetRef:
+            initialData.thumbnail?.assetRef ?? "__no_thumbnail",
           thumbnailUrl: initialData.thumbnail?.url ?? "",
           trailerUrl: initialData.trailerUrl ?? "",
           resourcesDigest: initialData.resourcesDigest ?? "",
@@ -106,7 +131,7 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
           resources: [],
           featured: false,
           readonly: false,
-          thumbnailAssetRef: "",
+          thumbnailAssetRef: "__no_thumbnail",
           thumbnailUrl: "",
           trailerUrl: "",
           resourcesDigest: "",
@@ -125,7 +150,7 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
         resources: initialData.resources ?? [],
         featured: initialData.featured ?? false,
         readonly: initialData.readonly ?? false,
-        thumbnailAssetRef: initialData.thumbnail?.assetRef ?? "",
+        thumbnailAssetRef: initialData.thumbnail?.assetRef ?? "__no_thumbnail",
         thumbnailUrl: initialData.thumbnail?.url ?? "",
         trailerUrl: initialData.trailerUrl ?? "",
         resourcesDigest: initialData.resourcesDigest ?? "",
@@ -154,6 +179,10 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(
     Boolean(initialData),
   );
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isUploadingAsset, setIsUploadingAsset] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const titleValue = form.watch("title");
 
   useEffect(() => {
@@ -166,7 +195,109 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
   const selectedTopicIds = form.watch("topicIds");
   const topicsList = useMemo(() => topics ?? [], [topics]);
   const chaptersList = useMemo(() => chapters ?? [], [chapters]);
+  const assetsList = useMemo(() => {
+    if (!assets) return [];
+    // Since we're not using pagination, assets should be an array
+    return Array.isArray(assets) ? assets : [];
+  }, [assets]);
+  const selectedThumbnailValue = form.watch("thumbnailAssetRef");
+  const selectedThumbnailAsset = useMemo(() => {
+    if (selectedThumbnailValue === "__no_thumbnail") return null;
+    return (
+      assetsList.find((asset) => asset.storageId === selectedThumbnailValue) ??
+      null
+    );
+  }, [assetsList, selectedThumbnailValue]);
   const { isSubmitting } = form.formState;
+  const isAssetsLoading = assets === undefined;
+
+  const resetFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAssetUpload = async (file: File) => {
+    setIsUploadingAsset(true);
+    setIsDraggingFile(false);
+    try {
+      const uploadUrl = await generateUploadUrl({});
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const { storageId } = await response.json();
+
+      await createAssetFromUpload({
+        storageId,
+        filename: file.name,
+        size: file.size,
+        mimeType: file.type || "application/octet-stream",
+      });
+
+      form.setValue("thumbnailAssetRef", storageId, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+      form.clearErrors("thumbnailAssetRef");
+      toast.success("Asset uploaded");
+      setIsUploadDialogOpen(false);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to upload asset";
+      toast.error(message);
+    } finally {
+      setIsUploadingAsset(false);
+      resetFileInput();
+    }
+  };
+
+  const handleFileInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || isUploadingAsset) return;
+    void handleAssetUpload(file);
+  };
+
+  const handleBrowseClick = () => {
+    if (isUploadingAsset) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (isUploadingAsset) return;
+    const file = event.dataTransfer.files?.[0];
+    if (file) {
+      void handleAssetUpload(file);
+    }
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (isUploadingAsset) return;
+    setIsDraggingFile(true);
+  };
+
+  const handleDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    if (isUploadingAsset) return;
+    setIsDraggingFile(false);
+  };
+
+  useEffect(() => {
+    if (!isUploadDialogOpen) {
+      setIsDraggingFile(false);
+      resetFileInput();
+    }
+  }, [isUploadDialogOpen]);
 
   const toggleTopic = (topicId: Id<"topics">) => {
     const current = new Set(selectedTopicIds);
@@ -196,7 +327,9 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
       featured: values.featured ?? false,
       readonly: values.readonly ?? false,
       thumbnail:
-        values.thumbnailAssetRef && values.thumbnailAssetRef.trim().length > 0
+        values.thumbnailAssetRef &&
+        values.thumbnailAssetRef.trim().length > 0 &&
+        values.thumbnailAssetRef !== "__no_thumbnail"
           ? {
               assetRef: values.thumbnailAssetRef as Id<"_storage">,
               url: values.thumbnailUrl || undefined,
@@ -442,7 +575,7 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => addOutcome({ label: "", url: "" })}
+                onClick={() => addOutcome("")}
               >
                 Add outcome
               </Button>
@@ -557,10 +690,183 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
                 name="thumbnailAssetRef"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Thumbnail asset ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="convex asset ID" {...field} />
-                    </FormControl>
+                    <FormLabel>Thumbnail asset</FormLabel>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Select
+                            value={field.value ?? ""}
+                            onValueChange={field.onChange}
+                            disabled={isAssetsLoading}
+                          >
+                            <SelectTrigger className="w-full justify-between">
+                              <SelectValue
+                                placeholder={
+                                  isAssetsLoading
+                                    ? "Loading assets..."
+                                    : "Select asset"
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__no_thumbnail">
+                                <div className="flex flex-col text-left">
+                                  <span className="text-sm font-medium">
+                                    No thumbnail
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    Use default course styling
+                                  </span>
+                                </div>
+                              </SelectItem>
+                              {assetsList.length === 0 ? (
+                                <SelectItem value="__no_assets" disabled>
+                                  Upload a new asset with the plus button
+                                </SelectItem>
+                              ) : (
+                                assetsList.map((asset) => (
+                                  <SelectItem
+                                    key={asset._id}
+                                    value={asset.storageId}
+                                  >
+                                    <div className="flex flex-col text-left">
+                                      <span className="text-sm font-medium">
+                                        {asset.filename}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <Dialog
+                          open={isUploadDialogOpen}
+                          onOpenChange={setIsUploadDialogOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="shrink-0"
+                              aria-label="Upload new asset"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-md">
+                            <DialogHeader>
+                              <DialogTitle>Upload a new asset</DialogTitle>
+                              <DialogDescription>
+                                Drop an image or video. It will be added to the
+                                asset library and linked to this field once
+                                uploaded.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/*,video/*"
+                              className="hidden"
+                              onChange={handleFileInputChange}
+                            />
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              onClick={handleBrowseClick}
+                              onKeyDown={(event) => {
+                                if (
+                                  event.key === "Enter" ||
+                                  event.key === " "
+                                ) {
+                                  event.preventDefault();
+                                  handleBrowseClick();
+                                }
+                              }}
+                              onDragOver={handleDragOver}
+                              onDragLeave={handleDragLeave}
+                              onDrop={handleDrop}
+                              className={cn(
+                                "border-border/70 focus-visible:ring-ring/50 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed bg-muted/20 p-6 text-center text-sm transition-colors focus-visible:outline-none focus-visible:ring-[3px]",
+                                isDraggingFile &&
+                                  "border-primary bg-primary/10",
+                                isUploadingAsset &&
+                                  "pointer-events-none opacity-60",
+                              )}
+                            >
+                              <UploadCloud className="h-6 w-6" />
+                              <div className="space-y-1">
+                                <p className="text-sm font-medium">
+                                  {isUploadingAsset
+                                    ? "Uploading asset..."
+                                    : "Drag & drop your file"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {isUploadingAsset
+                                    ? "Hang tight while we finish the upload."
+                                    : "Images or videos up to 25 MB."}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  handleBrowseClick();
+                                }}
+                                disabled={isUploadingAsset}
+                              >
+                                Browse files
+                              </Button>
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  disabled={isUploadingAsset}
+                                >
+                                  Close
+                                </Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                      {selectedThumbnailAsset ? (
+                        <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/40 p-3 text-sm">
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {selectedThumbnailAsset.filename}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {formatBytes(selectedThumbnailAsset.size)} •{" "}
+                              {selectedThumbnailAsset.mimeType}
+                            </span>
+                          </div>
+                          {selectedThumbnailAsset.mimeType.startsWith(
+                            "image/",
+                          ) ? (
+                            <div className="h-12 w-12 overflow-hidden rounded-md border border-border/60">
+                              <img
+                                src={selectedThumbnailAsset.url}
+                                alt={selectedThumbnailAsset.filename}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                      {!isAssetsLoading && assetsList.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          No assets yet. Upload one from here or manage them on
+                          the assets page.
+                        </p>
+                      ) : null}
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -610,11 +916,12 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Manage uploads on the{" "}
+              Need bulk actions? Visit the{" "}
               <Link className="underline" href="/admin/assets">
                 assets page
               </Link>{" "}
-              and paste the storage ID above.
+              to manage the library—uploads there instantly sync with this
+              picker.
             </p>
           </section>
 

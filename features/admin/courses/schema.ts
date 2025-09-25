@@ -33,7 +33,7 @@ export const courseFormSchema = z.object({
     .optional(),
   featured: z.boolean(),
   readonly: z.boolean(),
-  thumbnailAssetRef: z.string().optional().or(z.literal("")),
+  thumbnailAssetRef: z.string().optional().or(z.literal("")).or(z.literal("__no_thumbnail")),
   thumbnailUrl: urlOptional,
   trailerUrl: urlOptional,
   resourcesDigest: z.string().optional().or(z.literal("")),

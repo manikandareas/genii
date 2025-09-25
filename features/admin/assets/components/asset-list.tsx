@@ -25,8 +25,12 @@ export function AssetList() {
     pagination: undefined,
   });
 
-  const generateUploadUrl = useMutation(api.admin.assets.mutations.generateUploadUrl);
-  const createFromUpload = useMutation(api.admin.assets.mutations.createFromUpload);
+  const generateUploadUrl = useMutation(
+    api.admin.assets.mutations.generateUploadUrl,
+  );
+  const createFromUpload = useMutation(
+    api.admin.assets.mutations.createFromUpload,
+  );
   const removeAsset = useMutation(api.admin.assets.mutations.remove);
   const touchAsset = useMutation(api.admin.assets.mutations.touch);
 
@@ -37,7 +41,9 @@ export function AssetList() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setIsUploading(true);
@@ -65,7 +71,8 @@ export function AssetList() {
 
       toast.success("Asset uploaded");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to upload asset";
+      const message =
+        error instanceof Error ? error.message : "Failed to upload asset";
       toast.error(message);
     } finally {
       setIsUploading(false);
@@ -76,13 +83,16 @@ export function AssetList() {
   };
 
   const handleDelete = async (assetId: Id<"assets">) => {
-    const confirmed = window.confirm("Delete this asset? Uploads using it may break.");
+    const confirmed = window.confirm(
+      "Delete this asset? Uploads using it may break.",
+    );
     if (!confirmed) return;
     try {
       await removeAsset({ assetId });
       toast.success("Asset deleted");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete asset";
+      const message =
+        error instanceof Error ? error.message : "Failed to delete asset";
       toast.error(message);
     }
   };
@@ -92,17 +102,9 @@ export function AssetList() {
       await touchAsset({ assetId });
       toast.success("Asset timestamp refreshed");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to refresh asset";
+      const message =
+        error instanceof Error ? error.message : "Failed to refresh asset";
       toast.error(message);
-    }
-  };
-
-  const handleCopy = async (value: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success("Copied to clipboard");
-    } catch (error) {
-      toast.error("Copy failed");
     }
   };
 
@@ -120,13 +122,17 @@ export function AssetList() {
         description="Upload and manage media stored in Convex."
       >
         <div>
-          <Button type="button" onClick={handleUploadClick} disabled={isUploading}>
+          <Button
+            type="button"
+            onClick={handleUploadClick}
+            disabled={isUploading}
+          >
             {isUploading ? "Uploading..." : "Upload"}
           </Button>
         </div>
       </PageHeader>
 
-  <ListToolbar
+      <ListToolbar
         value={search}
         onValueChange={setSearch}
         placeholder="Search by filename"
@@ -165,21 +171,14 @@ export function AssetList() {
                   <td className="px-4 py-3 text-sm font-medium">
                     <div className="flex flex-col">
                       <span>{asset.filename}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="w-fit text-xs"
-                        onClick={() => handleCopy(asset.storageId)}
-                      >
-                        Copy storage ID
-                      </Button>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatBytes(asset.size)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{asset.mimeType}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {asset.mimeType}
+                  </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatDate(asset.updatedAt ?? asset._creationTime)}
                   </td>
