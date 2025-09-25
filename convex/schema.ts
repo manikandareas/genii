@@ -160,8 +160,7 @@ export default defineSchema({
     size: v.number(),
     uploadedBy: v.optional(v.string()),
     updatedAt: v.number(),
-  })
-    .index("by_filename", ["filename"]),
+  }).index("by_filename", ["filename"]),
 
   course_enrollments: defineTable({
     userId: v.id("users"),

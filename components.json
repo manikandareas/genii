@@ -17,6 +17,5 @@
     "ui": "@/features/shared/components/ui",
     "lib": "@/lib",
     "hooks": "@/features/shared/hooks"
-  },
-  "registries": {}
+  }
 }

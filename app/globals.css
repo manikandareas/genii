@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
+
+@plugin "tailwind-scrollbar-hide";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -43,6 +46,8 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --animate-aurora: aurora 60s linear infinite;
+
+  --color-highlight: var(--highlight);
   @keyframes aurora {
     from {
       background-position:
@@ -90,6 +95,7 @@
   --sidebar-ring: oklch(0.708 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
+  --highlight: oklch(0.852 0.199 91.936);
 }
 
 .dark {
@@ -124,6 +130,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --highlight: oklch(0.852 0.199 91.936);
 }
 
 @layer base {

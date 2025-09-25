@@ -1,19 +1,29 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { startTransition, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import AdminContainer from "@/features/admin/components/container";
+import {
+  LessonFormSchema,
+  lessonFormSchema,
+} from "@/features/admin/lessons/schema";
 import { PageHeader } from "@/features/admin/shared/components/page-header";
 import { formatDate } from "@/features/admin/shared/utils/format-date";
 import { slugify } from "@/features/admin/shared/utils/slugify";
+import { EditorKit } from "@/features/shared/components/editor/editor-kit";
+import { Button } from "@/features/shared/components/ui/button";
+import {
+  Editor,
+  EditorContainer,
+} from "@/features/shared/components/ui/editor";
 import {
   Form,
   FormControl,
@@ -23,7 +33,6 @@ import {
   FormMessage,
 } from "@/features/shared/components/ui/form";
 import { Input } from "@/features/shared/components/ui/input";
-import { Textarea } from "@/features/shared/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -31,8 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/features/shared/components/ui/select";
-import { Button } from "@/features/shared/components/ui/button";
-import { lessonFormSchema, type LessonFormValues } from "@/features/admin/lessons/schema";
+import type { Value } from "platejs";
+import { Plate, usePlateEditor } from "platejs/react";
 
 interface LessonFormProps {
   lessonId?: Id<"lessons">;
@@ -49,6 +58,35 @@ interface LessonFormProps {
   } | null;
 }
 
+const createEmptyPlateValue = (): Value => [] as Value;
+
+const clonePlateValue = (value: Value): Value => {
+  if (typeof globalThis.structuredClone === "function") {
+    return globalThis.structuredClone(value) as Value;
+  }
+
+  return JSON.parse(JSON.stringify(value)) as Value;
+};
+
+const toPlateValue = (raw: unknown): Value => {
+  if (Array.isArray(raw)) {
+    return clonePlateValue(raw as Value);
+  }
+
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return clonePlateValue(parsed as Value);
+      }
+    } catch {
+      // ignore malformed JSON
+    }
+  }
+
+  return createEmptyPlateValue();
+};
+
 export function LessonForm({ lessonId, initialData }: LessonFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -62,7 +100,29 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
     topicId: undefined,
   });
 
-  const form = useForm<LessonFormValues>({
+  const initialContent = useMemo(
+    () => toPlateValue(initialData?.content),
+    [initialData],
+  );
+
+  const editorInitialValue = useMemo(
+    () =>
+      initialData ? clonePlateValue(initialContent) : createEmptyPlateValue(),
+    [initialData, initialContent],
+  );
+
+  const formInitialContent = useMemo(
+    () =>
+      initialData ? clonePlateValue(initialContent) : createEmptyPlateValue(),
+    [initialData, initialContent],
+  );
+
+  const editor = usePlateEditor({
+    plugins: EditorKit,
+    value: editorInitialValue,
+  });
+
+  const form = useForm<LessonFormSchema>({
     resolver: zodResolver(lessonFormSchema),
     defaultValues: initialData
       ? {
@@ -70,7 +130,7 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
           chapterId: initialData.chapterId,
           title: initialData.title,
           slug: initialData.slug,
-          content: JSON.stringify(initialData.content, null, 2),
+          content: formInitialContent,
           videoUrl: initialData.videoUrl ?? "",
         }
       : {
@@ -78,23 +138,30 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
           chapterId: preselectedChapterId ?? "",
           title: "",
           slug: "",
-          content: "",
+          content: formInitialContent,
           videoUrl: "",
         },
   });
 
   useEffect(() => {
-    if (initialData) {
-      form.reset({
-        courseId: initialData.courseId,
-        chapterId: initialData.chapterId,
-        title: initialData.title,
-        slug: initialData.slug,
-        content: JSON.stringify(initialData.content, null, 2),
-        videoUrl: initialData.videoUrl ?? "",
-      });
+    if (!initialData) {
+      return;
     }
-  }, [initialData, form]);
+
+    const nextFormContent = clonePlateValue(initialContent);
+    const nextEditorContent = clonePlateValue(initialContent);
+
+    form.reset({
+      courseId: initialData.courseId,
+      chapterId: initialData.chapterId,
+      title: initialData.title,
+      slug: initialData.slug,
+      content: nextFormContent,
+      videoUrl: initialData.videoUrl ?? "",
+    });
+
+    editor.children = nextEditorContent;
+  }, [initialData, initialContent, form, editor]);
 
   const createLesson = useMutation(api.admin.lessons.mutations.create);
   const updateLesson = useMutation(api.admin.lessons.mutations.update);
@@ -103,10 +170,14 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
   const selectedCourseId = form.watch("courseId");
   const chapters = useQuery(api.admin.chapters.queries.list, {
     search: undefined,
-    courseId: selectedCourseId ? (selectedCourseId as Id<"courses">) : undefined,
+    courseId: selectedCourseId
+      ? (selectedCourseId as Id<"courses">)
+      : undefined,
   });
 
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(Boolean(initialData));
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(
+    Boolean(initialData),
+  );
   const titleValue = form.watch("title");
 
   useEffect(() => {
@@ -134,27 +205,25 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
     }
 
     form.setValue("chapterId", "");
-  }, [selectedCourseId, form, initialData, preselectedChapterId, preselectedCourseId]);
+  }, [
+    selectedCourseId,
+    form,
+    initialData,
+    preselectedChapterId,
+    preselectedCourseId,
+  ]);
 
   const { isSubmitting } = form.formState;
   const coursesList = useMemo(() => courses ?? [], [courses]);
   const chaptersList = useMemo(() => chapters ?? [], [chapters]);
 
-  const handleSubmit = async (values: LessonFormValues) => {
-    let parsedContent: unknown = values.content;
-    try {
-      parsedContent = JSON.parse(values.content);
-    } catch {
-      toast.error("Content must be valid JSON produced by Plate editors");
-      return;
-    }
-
+  const handleSubmit = async (values: LessonFormSchema) => {
     const payload = {
       courseId: values.courseId as Id<"courses">,
       chapterId: values.chapterId as Id<"chapters">,
       title: values.title,
       slug: values.slug,
-      content: parsedContent,
+      content: values.content,
       videoUrl: values.videoUrl ? values.videoUrl : undefined,
     };
 
@@ -170,14 +239,17 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
       }
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save lesson";
+      const message =
+        error instanceof Error ? error.message : "Failed to save lesson";
       toast.error(message);
     }
   };
 
   const handleDelete = async () => {
     if (!lessonId) return;
-    const confirmed = window.confirm("Delete this lesson? This action cannot be undone.");
+    const confirmed = window.confirm(
+      "Delete this lesson? This action cannot be undone.",
+    );
     if (!confirmed) return;
     try {
       await removeLesson({ lessonId });
@@ -185,21 +257,27 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
       router.push("/admin/lessons");
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete lesson";
+      const message =
+        error instanceof Error ? error.message : "Failed to delete lesson";
       toast.error(message);
     }
   };
 
-  const lastUpdated = useMemo(() => initialData?.updatedAt ?? initialData?._creationTime, [
-    initialData,
-  ]);
+  const lastUpdated = useMemo(
+    () => initialData?.updatedAt ?? initialData?._creationTime,
+    [initialData],
+  );
 
   return (
     <AdminContainer className="flex flex-col gap-8">
       <PageHeader
         title={initialData ? initialData.title : "Create Lesson"}
         description="Lessons contain Plate content and optional video references."
-        action={{ label: "Back to lessons", href: "/admin/lessons", variant: "outline" }}
+        action={{
+          label: "Back to lessons",
+          href: "/admin/lessons",
+          variant: "outline",
+        }}
       />
 
       <Form {...form}>
@@ -294,34 +372,30 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
           <section className="grid gap-6 rounded-lg border border-border/70 bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Plate content</h2>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  try {
-                    const parsed = JSON.parse(form.getValues("content"));
-                    form.setValue("content", JSON.stringify(parsed, null, 2));
-                    toast.info("Content formatted");
-                  } catch {
-                    toast.error("Unable to format. Ensure the content is valid JSON.");
-                  }
-                }}
-              >
-                Format JSON
-              </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Paste the Plate JSON payload here. A dedicated rich-text editor integration will be wired soon.
+              Use the rich-text editor below to create and format the lesson
+              content.
             </p>
             <FormField
               control={form.control}
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="sr-only">Plate JSON</FormLabel>
+                  <FormLabel className="sr-only">Lesson content</FormLabel>
                   <FormControl>
-                    <Textarea rows={16} className="font-mono text-xs" {...field} />
+                    <Plate
+                      editor={editor}
+                      onChange={({ value }) => {
+                        startTransition(() => {
+                          field.onChange(value as Value);
+                        });
+                      }}
+                    >
+                      <EditorContainer variant="demo">
+                        <Editor />
+                      </EditorContainer>
+                    </Plate>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -348,9 +422,14 @@ export function LessonForm({ lessonId, initialData }: LessonFormProps) {
 
           <div className="flex flex-col gap-2 text-sm text-muted-foreground">
             <span>
-              Created: {initialData ? formatDate(initialData._creationTime) : "Upon save"}
+              Created:{" "}
+              {initialData
+                ? formatDate(initialData._creationTime)
+                : "Upon save"}
             </span>
-            <span>Last updated: {lastUpdated ? formatDate(lastUpdated) : "—"}</span>
+            <span>
+              Last updated: {lastUpdated ? formatDate(lastUpdated) : "—"}
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
