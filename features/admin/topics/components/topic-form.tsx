@@ -10,13 +10,23 @@ import Link from "next/link";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/features/shared/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/features/shared/components/ui/form";
 import { Input } from "@/features/shared/components/ui/input";
 import { Textarea } from "@/features/shared/components/ui/textarea";
 import { Button } from "@/features/shared/components/ui/button";
 import { PageHeader } from "@/features/admin/shared/components/page-header";
 import AdminContainer from "@/features/admin/components/container";
-import { topicFormSchema, type TopicFormValues } from "@/features/admin/topics/schema";
+import {
+  topicFormSchema,
+  type TopicFormValues,
+} from "@/features/admin/topics/schema";
 import { formatDate } from "@/features/admin/shared/utils/format-date";
 import { slugify } from "@/features/admin/shared/utils/slugify";
 
@@ -80,7 +90,6 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
   }, [initialData]);
 
   const titleValue = form.watch("title");
-  const slugValue = form.watch("slug");
 
   useEffect(() => {
     if (initialData) return;
@@ -104,7 +113,8 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
       }
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to save topic";
+      const message =
+        error instanceof Error ? error.message : "Failed to save topic";
       toast.error(message);
     }
   };
@@ -121,21 +131,27 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
       router.push("/admin/topics");
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to delete topic";
+      const message =
+        error instanceof Error ? error.message : "Failed to delete topic";
       toast.error(message);
     }
   };
 
-  const lastUpdated = useMemo(() => initialData?.updatedAt ?? initialData?._creationTime, [
-    initialData,
-  ]);
+  const lastUpdated = useMemo(
+    () => initialData?.updatedAt ?? initialData?._creationTime,
+    [initialData],
+  );
 
   return (
     <AdminContainer className="flex flex-col gap-8">
       <PageHeader
         title={initialData ? initialData.title : "Create Topic"}
         description="Define the topic metadata used across the catalog."
-        action={{ label: "Back to topics", href: "/admin/topics", variant: "outline" }}
+        action={{
+          label: "Back to topics",
+          href: "/admin/topics",
+          variant: "outline",
+        }}
       />
 
       <Form {...form}>
@@ -183,7 +199,10 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
                 <FormItem>
                   <FormLabel>Icon</FormLabel>
                   <FormControl>
-                    <Input placeholder="Optional emoji or short label" {...field} />
+                    <Input
+                      placeholder="Optional emoji or short label"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -198,9 +217,15 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
                   <FormLabel>Color</FormLabel>
                   <div className="flex items-center gap-3">
                     <FormControl>
-                      <Input type="color" {...field} value={field.value || "#4f46e5"} />
+                      <Input
+                        type="color"
+                        {...field}
+                        value={field.value || "#4f46e5"}
+                      />
                     </FormControl>
-                    <span className="text-xs text-muted-foreground">Used for badges & accents</span>
+                    <span className="text-xs text-muted-foreground">
+                      Used for badges & accents
+                    </span>
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -215,7 +240,11 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
               <FormItem>
                 <FormLabel>Description</FormLabel>
                 <FormControl>
-                  <Textarea rows={4} placeholder="Short summary of the topic" {...field} />
+                  <Textarea
+                    rows={4}
+                    placeholder="Short summary of the topic"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -224,9 +253,14 @@ export function TopicForm({ topicId, initialData }: TopicFormProps) {
 
           <div className="flex flex-col gap-2 text-sm text-muted-foreground">
             <span>
-              Created: {initialData ? formatDate(initialData._creationTime) : "Upon save"}
+              Created:{" "}
+              {initialData
+                ? formatDate(initialData._creationTime)
+                : "Upon save"}
             </span>
-            <span>Last updated: {lastUpdated ? formatDate(lastUpdated) : "—"}</span>
+            <span>
+              Last updated: {lastUpdated ? formatDate(lastUpdated) : "—"}
+            </span>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
