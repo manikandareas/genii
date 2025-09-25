@@ -1,6 +1,5 @@
-import AdminContainer from "@/features/admin/components/container";
-import React from "react";
+import { AdminDashboardView } from "@/features/admin/dashboard/components/admin-dashboard";
 
 export default function AdminDashboard() {
-  return <AdminContainer>AdminDashboard</AdminContainer>;
+  return <AdminDashboardView />;
 }

@@ -7,6 +7,7 @@ import {
   IconDashboard,
   IconFile,
   IconFileStack,
+  IconCloudUpload,
   IconVocabulary,
 } from "@tabler/icons-react";
 import { Shield } from "lucide-react";
@@ -17,19 +18,12 @@ export default function AdminNavbar() {
   const pathname = usePathname();
   const menuItems = [
     { name: "Dashboard", href: `/admin/dashboard`, icon: IconDashboard },
-    {
-      name: "Topics",
-      href: `/admin/topics`,
-      icon: IconBadge,
-    },
-    {
-      name: "Courses",
-      href: `/admin/courses`,
-      icon: IconBook,
-    },
+    { name: "Topics", href: `/admin/topics`, icon: IconBadge },
+    { name: "Courses", href: `/admin/courses`, icon: IconBook },
     { name: "Chapters", href: `/admin/chapters`, icon: IconFile },
-    { name: "Lessons", href: `/admin/chapters`, icon: IconVocabulary },
-    { name: "Quizzes", href: `/admin/chapters`, icon: IconFileStack },
+    { name: "Lessons", href: `/admin/lessons`, icon: IconVocabulary },
+    { name: "Quizzes", href: `/admin/quizzes`, icon: IconFileStack },
+    { name: "Assets", href: `/admin/assets`, icon: IconCloudUpload },
   ];
   return (
     <div className="w-full bg-card">
@@ -54,8 +48,8 @@ export default function AdminNavbar() {
                 <Link href={item.href} className="flex items-center">
                   <span
                     className={cn(
-                      "text-sm text-muted-foreground flex items-center gap-1.5 hover:text-primary",
-                      pathname === item.href && "font-medium text-primary",
+                      "flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-primary",
+                      pathname.startsWith(item.href) && "font-medium text-primary",
                     )}
                   >
                     <item.icon size={18} />
