@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { GripVertical, Plus, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -103,10 +103,17 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
     courseId: courseId ?? undefined,
     search: undefined,
   });
-  const assets = useQuery(api.admin.assets.queries.list, {
-    search: undefined,
-    pagination: undefined,
-  });
+  const {
+    results: assetResults,
+    status: assetsStatus,
+    loadMore: loadMoreAssets,
+  } = usePaginatedQuery(
+    api.admin.assets.queries.list,
+    {
+      search: undefined,
+    },
+    { initialNumItems: 20 },
+  );
 
   const createCourse = useMutation(api.admin.courses.mutations.create);
   const updateCourse = useMutation(api.admin.courses.mutations.update);
@@ -180,8 +187,9 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
     append: addOutcome,
     remove: removeOutcome,
   } = useFieldArray({
-    name: "learningOutcomes",
     control: form.control,
+    // @ts-expect-error zod bug
+    name: "learningOutcomes",
   });
 
   const {
@@ -318,13 +326,9 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
           setIsReorderingChapters(false);
         });
     },
-    [chapterOrder, courseId, isReorderingChapters, reorderChapters, toast],
+    [chapterOrder, courseId, isReorderingChapters, reorderChapters],
   );
-  const assetsList = useMemo(() => {
-    if (!assets) return [];
-    // Since we're not using pagination, assets should be an array
-    return Array.isArray(assets) ? assets : [];
-  }, [assets]);
+  const assetsList = assetResults;
   const selectedThumbnailValue = form.watch("thumbnailAssetRef");
   const selectedThumbnailAsset = useMemo(() => {
     if (selectedThumbnailValue === "__no_thumbnail") return null;
@@ -333,8 +337,29 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
       null
     );
   }, [assetsList, selectedThumbnailValue]);
+  useEffect(() => {
+    if (
+      !selectedThumbnailValue ||
+      selectedThumbnailValue === "__no_thumbnail" ||
+      assetsStatus === "LoadingFirstPage" ||
+      assetsStatus === "LoadingMore"
+    ) {
+      return;
+    }
+
+    const exists = assetsList.some(
+      (asset) => asset.storageId === selectedThumbnailValue,
+    );
+
+    if (!exists && assetsStatus === "CanLoadMore") {
+      loadMoreAssets(20);
+    }
+  }, [assetsList, assetsStatus, loadMoreAssets, selectedThumbnailValue]);
   const { isSubmitting } = form.formState;
-  const isAssetsLoading = assets === undefined;
+  const isAssetsLoading = assetsStatus === "LoadingFirstPage";
+  const isLoadingMoreAssets = assetsStatus === "LoadingMore";
+  const canLoadMoreAssets =
+    assetsStatus === "CanLoadMore" || isLoadingMoreAssets;
 
   const resetFileInput = () => {
     if (fileInputRef.current) {
@@ -700,7 +725,12 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => addOutcome("")}
+                onClick={() =>
+                  addOutcome({
+                    label: "",
+                    url: "",
+                  })
+                }
               >
                 Add outcome
               </Button>
@@ -960,6 +990,17 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
                             </DialogFooter>
                           </DialogContent>
                         </Dialog>
+                        {canLoadMoreAssets ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => loadMoreAssets(20)}
+                            disabled={isLoadingMoreAssets}
+                          >
+                            {isLoadingMoreAssets ? "Loading..." : "Load more"}
+                          </Button>
+                        ) : null}
                       </div>
                       {selectedThumbnailAsset ? (
                         <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/40 p-3 text-sm">

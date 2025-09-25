@@ -20,9 +20,8 @@ export const courseFormSchema = z.object({
     error: () => ({ message: "Select a difficulty" }),
   }),
   topicIds: z.array(z.string()).min(1, "Select at least one topic"),
-  learningOutcomes: z
-    .array(z.string().min(1, "Outcome cannot be empty"))
-    .optional(),
+
+  learningOutcomes: z.array(z.string()).optional(),
   resources: z
     .array(
       z.object({
@@ -33,7 +32,11 @@ export const courseFormSchema = z.object({
     .optional(),
   featured: z.boolean(),
   readonly: z.boolean(),
-  thumbnailAssetRef: z.string().optional().or(z.literal("")).or(z.literal("__no_thumbnail")),
+  thumbnailAssetRef: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .or(z.literal("__no_thumbnail")),
   thumbnailUrl: urlOptional,
   trailerUrl: urlOptional,
   resourcesDigest: z.string().optional().or(z.literal("")),

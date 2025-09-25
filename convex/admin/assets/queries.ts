@@ -6,37 +6,28 @@ import { ensureAdmin } from "../../utils";
 export const list = query({
   args: {
     search: v.optional(v.string()),
-    pagination: v.optional(paginationOptsValidator),
+    paginationOpts: paginationOptsValidator,
   },
-  handler: async (ctx, { search, pagination }) => {
+  handler: async (ctx, { search, paginationOpts }) => {
     const identity = await ensureAdmin(ctx);
     if (!identity) {
       throw new Error("Unauthorized");
     }
 
     const baseQuery = ctx.db.query("assets").order("desc");
+    const page = await baseQuery.paginate(paginationOpts);
 
-    if (pagination) {
-      const page = await baseQuery.paginate(pagination);
-      if (!search) {
-        return page;
-      }
-
-      return {
-        ...page,
-        page: page.page.filter((asset) =>
-          asset.filename.toLowerCase().includes(search.toLowerCase()),
-        ),
-      };
-    }
-
-    const assets = await baseQuery.collect();
     if (!search) {
-      return assets;
+      return page;
     }
 
     const lowerSearch = search.toLowerCase();
-    return assets.filter((asset) => asset.filename.toLowerCase().includes(lowerSearch));
+    return {
+      ...page,
+      page: page.page.filter((asset) =>
+        asset.filename.toLowerCase().includes(lowerSearch),
+      ),
+    };
   },
 });
 

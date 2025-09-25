@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useRef, useState } from "react";
+import { useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
@@ -20,10 +20,17 @@ export function AssetList() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const assets = useQuery(api.admin.assets.queries.list, {
-    search: search || undefined,
-    pagination: undefined,
-  });
+  const {
+    results: assetResults,
+    status: assetsStatus,
+    loadMore: loadMoreAssets,
+  } = usePaginatedQuery(
+    api.admin.assets.queries.list,
+    {
+      search: search.trim() ? search : undefined,
+    },
+    { initialNumItems: 20 },
+  );
 
   const generateUploadUrl = useMutation(
     api.admin.assets.mutations.generateUploadUrl,
@@ -34,8 +41,22 @@ export function AssetList() {
   const removeAsset = useMutation(api.admin.assets.mutations.remove);
   const touchAsset = useMutation(api.admin.assets.mutations.touch);
 
-  const assetItems = useMemo(() => assets ?? [], [assets]);
-  const isLoading = assets === undefined;
+  const assetItems = assetResults;
+  const isLoading = assetsStatus === "LoadingFirstPage";
+  const isLoadingMore = assetsStatus === "LoadingMore";
+  const canLoadMore = assetsStatus === "CanLoadMore" || isLoadingMore;
+  const loadMoreButton = canLoadMore ? (
+    <div className="flex justify-center pt-4">
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => loadMoreAssets(20)}
+        disabled={isLoadingMore}
+      >
+        {isLoadingMore ? "Loading..." : "Load more"}
+      </Button>
+    </div>
+  ) : null;
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -141,10 +162,13 @@ export function AssetList() {
       {isLoading ? (
         <AssetsSkeleton />
       ) : assetItems.length === 0 ? (
-        <EmptyState
-          title="No assets yet"
-          description="Upload images, thumbnails, and other files to reference in content."
-        />
+        <div className="flex flex-col items-center gap-4">
+          <EmptyState
+            title="No assets yet"
+            description="Upload images, thumbnails, and other files to reference in content."
+          />
+          {loadMoreButton}
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="min-w-full divide-y divide-border">
@@ -206,6 +230,7 @@ export function AssetList() {
               ))}
             </tbody>
           </table>
+          {loadMoreButton}
         </div>
       )}
     </AdminContainer>
