@@ -1,6 +1,11 @@
 "use client";
 
 import {
+  convexQuery,
+  useConvexMutation,
+  useConvexPaginatedQuery,
+} from "@convex-dev/react-query";
+import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
@@ -17,11 +22,13 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  convexQuery,
-  useConvexMutation,
-  useConvexPaginatedQuery,
-} from "@convex-dev/react-query";
-import { GripVertical, Plus, UploadCloud } from "lucide-react";
+  Check,
+  ChevronsUpDown,
+  GripVertical,
+  Plus,
+  UploadCloud,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ChangeEvent, DragEvent } from "react";
@@ -46,6 +53,14 @@ import { slugify } from "@/features/admin/shared/utils/slugify";
 import { Button } from "@/features/shared/components/ui/button";
 import { Checkbox } from "@/features/shared/components/ui/checkbox";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/features/shared/components/ui/command";
+import {
   Dialog,
   DialogClose,
   DialogContent,
@@ -64,6 +79,11 @@ import {
   FormMessage,
 } from "@/features/shared/components/ui/form";
 import { Input } from "@/features/shared/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/features/shared/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -224,6 +244,7 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [isUploadingAsset, setIsUploadingAsset] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [isTopicPopoverOpen, setIsTopicPopoverOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const titleValue = form.watch("title");
 
@@ -234,8 +255,23 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
     }
   }, [titleValue, slugManuallyEdited, initialData, form]);
 
-  const selectedTopicIds = form.watch("topicIds");
+  const selectedTopicIds = (form.watch("topicIds") ?? []) as string[];
   const topicsList = useMemo(() => topics ?? [], [topics]);
+  const selectedTopicIdSet = useMemo(
+    () => new Set(selectedTopicIds),
+    [selectedTopicIds],
+  );
+  const selectedTopics = useMemo(
+    () => topicsList.filter((topic) => selectedTopicIdSet.has(topic._id)),
+    [topicsList, selectedTopicIdSet],
+  );
+  const selectedTopicsLabel = useMemo(() => {
+    if (selectedTopics.length === 0) return "Select topics...";
+    if (selectedTopics.length === 1) return selectedTopics[0].title;
+    if (selectedTopics.length === 2)
+      return `${selectedTopics[0].title}, ${selectedTopics[1].title}`;
+    return `${selectedTopics[0].title}, ${selectedTopics[1].title} +${selectedTopics.length - 2} more`;
+  }, [selectedTopics]);
   const chaptersList = useMemo(() => chapters ?? [], [chapters]);
   const sortedChapters = useMemo(
     () =>
@@ -473,7 +509,10 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
     } else {
       current.add(topicId);
     }
-    form.setValue("topicIds", Array.from(current) as string[]);
+    form.setValue("topicIds", Array.from(current) as string[], {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
   };
 
   const handleSubmit = async (values: CourseFormValues) => {
@@ -697,38 +736,108 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
               render={() => (
                 <FormItem>
                   <FormLabel>Select topics</FormLabel>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {topicsList.length === 0 ? (
-                      <EmptyState
-                        title="No topics available"
-                        description="Create topics first to tag this course."
-                        action={{
-                          label: "Create topic",
-                          href: "/admin/topics/new",
-                        }}
-                      />
-                    ) : (
-                      topicsList.map((topic) => (
-                        <label
-                          key={topic._id}
-                          htmlFor={`topic-${topic._id}`}
-                          className="flex items-start gap-3 rounded-md border border-border/60 bg-background/40 p-3 cursor-pointer hover:bg-background/60 transition-colors"
-                        >
-                          <Checkbox
-                            id={`topic-${topic._id}`}
-                            checked={selectedTopicIds.includes(topic._id)}
-                            onCheckedChange={() => toggleTopic(topic._id)}
-                          />
-                          <div>
-                            <p className="text-sm font-medium">{topic.title}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {topic.description}
-                            </p>
-                          </div>
-                        </label>
-                      ))
-                    )}
-                  </div>
+                  {topicsList.length === 0 ? (
+                    <EmptyState
+                      title="No topics available"
+                      description="Create topics first to tag this course."
+                      action={{
+                        label: "Create topic",
+                        href: "/admin/topics/new",
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <Popover
+                        open={isTopicPopoverOpen}
+                        onOpenChange={setIsTopicPopoverOpen}
+                      >
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={isTopicPopoverOpen}
+                              className="w-full justify-between"
+                            >
+                              <span
+                                className={cn(
+                                  "block truncate text-left",
+                                  selectedTopics.length === 0
+                                    ? "text-muted-foreground"
+                                    : undefined,
+                                )}
+                              >
+                                {selectedTopicsLabel}
+                              </span>
+                              <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[320px] p-0" align="start">
+                          <Command>
+                            <CommandInput
+                              placeholder="Search topics..."
+                              className="h-9"
+                            />
+                            <CommandList>
+                              <CommandEmpty>No topics found.</CommandEmpty>
+                              <CommandGroup>
+                                {topicsList.map((topic) => {
+                                  const isSelected = selectedTopicIdSet.has(
+                                    topic._id,
+                                  );
+                                  return (
+                                    <CommandItem
+                                      key={topic._id}
+                                      value={`${topic.title} ${topic.description ?? ""}`}
+                                      onSelect={() => toggleTopic(topic._id)}
+                                    >
+                                      <div className="flex flex-col gap-0.5">
+                                        <span className="text-sm font-medium">
+                                          {topic.title}
+                                        </span>
+                                        {topic.description ? (
+                                          <span className="text-xs text-muted-foreground">
+                                            {topic.description}
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      <Check
+                                        className={cn(
+                                          "ml-auto size-4",
+                                          isSelected
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                    </CommandItem>
+                                  );
+                                })}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {selectedTopics.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {selectedTopics.map((topic) => (
+                            <Button
+                              key={topic._id}
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="h-7 px-2"
+                              onClick={() => toggleTopic(topic._id)}
+                            >
+                              <span className="truncate">{topic.title}</span>
+                              <X className="ml-1 size-4" />
+                            </Button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
