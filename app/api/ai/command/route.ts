@@ -1,12 +1,12 @@
 import type {
   ChatMessage,
   ToolName,
-} from '@/features/shared/components/editor/use-chat';
-import type { NextRequest } from 'next/server';
+} from "@/features/shared/components/editor/use-chat";
+import type { NextRequest } from "next/server";
 
-import { createOpenAI } from '@ai-sdk/openai';
-import { replacePlaceholders } from '@platejs/ai';
-import { serializeMd } from '@platejs/markdown';
+import { createOpenAI } from "@ai-sdk/openai";
+import { replacePlaceholders } from "@platejs/ai";
+import { serializeMd } from "@platejs/markdown";
 import {
   convertToModelMessages,
   createUIMessageStream,
@@ -14,13 +14,13 @@ import {
   generateObject,
   streamObject,
   streamText,
-} from 'ai';
-import { NextResponse } from 'next/server';
-import { type SlateEditor, createSlateEditor, nanoid, RangeApi } from 'platejs';
-import { z } from 'zod';
+} from "ai";
+import { NextResponse } from "next/server";
+import { type SlateEditor, createSlateEditor, nanoid, RangeApi } from "platejs";
+import { z } from "zod";
 
-import { BaseEditorKit } from '@/features/shared/components/editor/editor-base-kit';
-import { markdownJoinerTransform } from '@/lib/markdown-joiner-transform';
+import { BaseEditorKit } from "@/features/shared/components/editor/editor-base-kit";
+import { markdownJoinerTransform } from "@/lib/markdown-joiner-transform";
 
 export async function POST(req: NextRequest) {
   const { apiKey: key, ctx, messages: messagesRaw } = await req.json();
@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
 
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Missing OpenAI API key.' },
-      { status: 401 }
+      { error: "Missing OpenAI API key." },
+      { status: 401 },
     );
   }
 
@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
     const stream = createUIMessageStream<ChatMessage>({
       execute: async ({ writer }) => {
         const lastIndex = messagesRaw.findIndex(
-          (message: any) => message.role === 'user'
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (message: any) => message.role === "user",
         );
 
         const messages = [...messagesRaw];
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest) {
           messages[lastIndex],
           {
             isSelecting,
-          }
+          },
         );
 
         const lastUserMessage = messages[lastIndex];
@@ -70,10 +71,10 @@ export async function POST(req: NextRequest) {
         if (!toolName) {
           const { object: AIToolName } = await generateObject({
             enum: isSelecting
-              ? ['generate', 'edit', 'comment']
-              : ['generate', 'comment'],
-            model: openai('gpt-4o-mini'),
-            output: 'enum',
+              ? ["generate", "edit", "comment"]
+              : ["generate", "comment"],
+            model: openai("gpt-4o-mini"),
+            output: "enum",
             prompt: `User message:
             ${JSON.stringify(lastUserMessage)}`,
             system: chooseToolSystem,
@@ -81,32 +82,32 @@ export async function POST(req: NextRequest) {
 
           writer.write({
             data: AIToolName as ToolName,
-            type: 'data-toolName',
+            type: "data-toolName",
           });
 
           toolName = AIToolName;
         }
 
-        if (toolName === 'generate') {
+        if (toolName === "generate") {
           const generateSystem = replacePlaceholders(
             editor,
-            generateSystemTemplate({ isSelecting })
+            generateSystemTemplate({ isSelecting }),
           );
 
           const gen = streamText({
             experimental_transform: markdownJoinerTransform(),
             maxOutputTokens: 2048,
             messages: convertToModelMessages(messages),
-            model: openai('gpt-4o-mini'),
+            model: openai("gpt-4o-mini"),
             system: generateSystem,
           });
 
           writer.merge(gen.toUIMessageStream({ sendFinish: false }));
         }
 
-        if (toolName === 'edit') {
+        if (toolName === "edit") {
           if (!isSelecting)
-            throw new Error('Edit tool is only available when selecting');
+            throw new Error("Edit tool is only available when selecting");
 
           const editSystem = replacePlaceholders(editor, editSystemTemplate());
 
@@ -114,17 +115,17 @@ export async function POST(req: NextRequest) {
             experimental_transform: markdownJoinerTransform(),
             maxOutputTokens: 2048,
             messages: convertToModelMessages(messages),
-            model: openai('gpt-4o-mini'),
+            model: openai("gpt-4o-mini"),
             system: editSystem,
           });
 
           writer.merge(edit.toUIMessageStream({ sendFinish: false }));
         }
 
-        if (toolName === 'comment') {
+        if (toolName === "comment") {
           const lastUserMessage = messagesRaw[lastIndex] as ChatMessage;
           const prompt = lastUserMessage.parts.find(
-            (p) => p.type === 'text'
+            (p) => p.type === "text",
           )?.text;
 
           const commentPrompt = replacePlaceholders(
@@ -132,33 +133,33 @@ export async function POST(req: NextRequest) {
             commentPromptTemplate({ isSelecting }),
             {
               prompt,
-            }
+            },
           );
 
           const { elementStream } = streamObject({
             maxOutputTokens: 2048,
-            model: openai('gpt-4o-mini'),
-            output: 'array',
+            model: openai("gpt-4o-mini"),
+            output: "array",
             prompt: removeEscapeSelection(editor, commentPrompt),
             schema: z
               .object({
                 blockId: z
                   .string()
                   .describe(
-                    'The id of the starting block. If the comment spans multiple blocks, use the id of the first block.'
+                    "The id of the starting block. If the comment spans multiple blocks, use the id of the first block.",
                   ),
                 comment: z
                   .string()
                   .describe(
-                    'A brief comment or explanation for this fragment.'
+                    "A brief comment or explanation for this fragment.",
                   ),
                 content: z
                   .string()
                   .describe(
-                    String.raw`The original document fragment to be commented on.It can be the entire block, a small part within a block, or span multiple blocks. If spanning multiple blocks, separate them with two \n\n.`
+                    String.raw`The original document fragment to be commented on.It can be the entire block, a small part within a block, or span multiple blocks. If spanning multiple blocks, separate them with two \n\n.`,
                   ),
               })
-              .describe('A single comment'),
+              .describe("A single comment"),
             system: commentSystem,
           });
 
@@ -171,7 +172,7 @@ export async function POST(req: NextRequest) {
             writer.write({
               id: commentDataId,
               data: comment,
-              type: 'data-comment',
+              type: "data-comment",
             });
           }
         }
@@ -181,8 +182,8 @@ export async function POST(req: NextRequest) {
     return createUIMessageStreamResponse({ stream });
   } catch {
     return NextResponse.json(
-      { error: 'Failed to process AI request' },
-      { status: 500 }
+      { error: "Failed to process AI request" },
+      { status: 500 },
     );
   }
 }
@@ -338,14 +339,14 @@ const PROMPT_TEMPLATES = {
 const replaceMessagePlaceholders = (
   editor: SlateEditor,
   message: ChatMessage,
-  { isSelecting }: { isSelecting: boolean }
+  { isSelecting }: { isSelecting: boolean },
 ): ChatMessage => {
   if (isSelecting) addSelection(editor);
 
   const template = promptTemplate({ isSelecting });
 
   const parts = message.parts.map((part) => {
-    if (part.type !== 'text' || !part.text) return part;
+    if (part.type !== "text" || !part.text) return part;
 
     let text = replacePlaceholders(editor, template, {
       prompt: part.text,
@@ -359,8 +360,8 @@ const replaceMessagePlaceholders = (
   return { ...message, parts };
 };
 
-const SELECTION_START = '<Selection>';
-const SELECTION_END = '</Selection>';
+const SELECTION_START = "<Selection>";
+const SELECTION_END = "</Selection>";
 
 const addSelection = (editor: SlateEditor) => {
   if (!editor.selection) return;
@@ -387,6 +388,7 @@ const removeEscapeSelection = (editor: SlateEditor, text: string) => {
 
   // If the selection is on a void element, inserting the placeholder will fail, and the string must be replaced manually.
   if (!newText.includes(SELECTION_END)) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_, end] = RangeApi.edges(editor.selection!);
 
     const node = editor.api.block({ at: end.path });
