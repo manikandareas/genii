@@ -1,0 +1,384 @@
+"use client";
+
+import { Fragment, useMemo } from "react";
+
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { SignInButton } from "@clerk/nextjs";
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { CheckCircle2, Clock3, Loader2, Sparkles, Trophy } from "lucide-react";
+import { toast } from "sonner";
+
+import { api } from "@/convex/_generated/api";
+import type { Doc, Id } from "@/convex/_generated/dataModel";
+import { queryClient } from "@/contexts/convex-client-provider";
+import { Button } from "@/features/shared/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/features/shared/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/features/shared/components/ui/drawer";
+import { Badge } from "@/features/shared/components/ui/badge";
+import { COURSE_DETAIL_COPY } from "../constants/course-detail-copy";
+import { CourseBadge } from "./course-badge";
+import { useMediaQuery } from "@/hooks/use-media-query";
+
+export type EnrollmentCourse = Pick<
+  Doc<"courses">,
+  | "_id"
+  | "title"
+  | "description"
+  | "difficulty"
+  | "learningOutcomes"
+  | "thumbnail"
+> & {
+  slug?: Doc<"courses">["slug"];
+};
+
+type CourseEnrollmentDialogProps = {
+  course: EnrollmentCourse;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export function CourseEnrollmentDialog({
+  course,
+  open,
+  onOpenChange,
+}: CourseEnrollmentDialogProps) {
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const pathname = usePathname();
+
+  const userQuery = useQuery(convexQuery(api.users.queries.getMe, {}));
+
+  const enrollmentQueryOptions = useMemo(
+    () =>
+      convexQuery(api.users.courses.queries.getEnrollmentForCourse, {
+        courseId: course._id,
+      }),
+    [course._id],
+  );
+
+  const { data: enrollment, isLoading: isEnrollmentLoading } = useQuery(
+    enrollmentQueryOptions,
+  );
+
+  const enrollMutation = useConvexMutation(
+    api.users.courses.mutations.enrollInCourse,
+  );
+
+  const { mutateAsync: enroll, isPending: isEnrolling } = useMutation({
+    mutationFn: (input: { courseId: Id<"courses"> }) => enrollMutation(input),
+    onSuccess: async () => {
+      toast.success(COURSE_DETAIL_COPY.success.enrolled, {
+        description: COURSE_DETAIL_COPY.success.enrolledDesc,
+      });
+
+      await queryClient.invalidateQueries({
+        queryKey: enrollmentQueryOptions.queryKey,
+      });
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : COURSE_DETAIL_COPY.error.enrollmentFailedDesc;
+      toast.error(COURSE_DETAIL_COPY.error.enrollmentFailed, {
+        description: message,
+      });
+    },
+  });
+
+  const isAuthenticated = Boolean(userQuery.data?._id);
+  const alreadyEnrolled = Boolean(enrollment?._id);
+
+  const learningOutcomes = useMemo(() => {
+    const fallback = COURSE_DETAIL_COPY.contents.outcomes
+      .defaultItems as unknown as string[];
+    return course.learningOutcomes?.length
+      ? course.learningOutcomes.slice(0, 3)
+      : fallback.slice(0, 3);
+  }, [course.learningOutcomes]);
+
+  const highlights = useMemo(
+    () => [
+      {
+        icon: <Clock3 className="h-4 w-4" />,
+        label: COURSE_DETAIL_COPY.enrollDialog.features.duration("20+"),
+      },
+      {
+        icon: <Trophy className="h-4 w-4" />,
+        label: COURSE_DETAIL_COPY.enrollDialog.features.topics,
+      },
+      {
+        icon: <Sparkles className="h-4 w-4" />,
+        label: COURSE_DETAIL_COPY.enrollDialog.features.access,
+      },
+    ],
+    [],
+  );
+
+  const infoSection = (
+    <div className="space-y-8">
+      {/* Course Thumbnail */}
+      {course.thumbnail?.url && (
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-muted/10 shadow-sm">
+          <Image
+            alt={course.title}
+            className="h-48 w-full object-cover transition-transform duration-300 hover:scale-105"
+            height={192}
+            src={course.thumbnail.url}
+            width={640}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        </div>
+      )}
+
+      {/* Course Header */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <CourseBadge difficulty={course.difficulty} />
+          <Badge variant="outline" className="text-xs font-medium">
+            {COURSE_DETAIL_COPY.enrollDialog.socialProof}
+          </Badge>
+        </div>
+
+        <div className="space-y-3">
+          <h2 className="text-3xl font-bold leading-tight tracking-tight">
+            {COURSE_DETAIL_COPY.enrollDialog.title}
+          </h2>
+          <p className="text-base text-muted-foreground leading-relaxed">
+            {COURSE_DETAIL_COPY.enrollDialog.subtitle}
+          </p>
+        </div>
+      </div>
+
+      {/* Course Highlights */}
+      <div className="rounded-2xl border border-border/70 bg-gradient-to-br from-muted/20 to-muted/10 p-6 shadow-sm">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {highlights.map((item) => (
+            <div
+              className="flex flex-col gap-3 rounded-xl bg-background/80 p-4 transition-colors hover:bg-background/90"
+              key={item.label}
+            >
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/20">
+                {item.icon}
+              </span>
+              <span className="text-sm font-semibold leading-snug text-foreground">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Learning Outcomes */}
+      <div className="space-y-4 rounded-2xl border border-border/60 bg-background/80 p-6 shadow-sm">
+        <div className="space-y-2">
+          <h3 className="text-base font-bold uppercase tracking-wider text-muted-foreground">
+            {COURSE_DETAIL_COPY.enrollDialog.aboutTitle}
+          </h3>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {COURSE_DETAIL_COPY.enrollDialog.aboutDescription}
+          </p>
+        </div>
+        <ul className="space-y-3 text-sm">
+          {learningOutcomes.map((item) => (
+            <li className="flex items-start gap-3" key={item}>
+              <span className="mt-1.5 h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+              <span className="text-foreground leading-relaxed">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+
+  const actionSection = (
+    <div
+      className={isDesktop ? "space-y-6 self-start sticky top-6" : "space-y-6"}
+    >
+      {/* Action Card Container */}
+      <div className="rounded-2xl border border-border/60 bg-background/80 p-6 shadow-lg backdrop-blur-sm">
+        {isAuthenticated ? (
+          alreadyEnrolled ? (
+            /* Already Enrolled State */
+            <div className="space-y-5 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <span className="font-bold text-emerald-600">
+                    {COURSE_DETAIL_COPY.success.enrolled}
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {COURSE_DETAIL_COPY.success.enrolledDesc}
+              </p>
+              <div className="flex flex-col gap-3">
+                <Button
+                  className="w-full h-11 font-semibold bg-emerald-600 text-white hover:bg-emerald-700"
+                  onClick={() => onOpenChange(false)}
+                >
+                  {COURSE_DETAIL_COPY.cta.enrolled.continue}
+                </Button>
+                <Button
+                  className="w-full h-11 font-medium"
+                  onClick={() => onOpenChange(false)}
+                  variant="outline"
+                >
+                  {COURSE_DETAIL_COPY.cta.enrolled.review}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            /* Enrollment CTA */
+            <div className="space-y-5">
+              <div className="space-y-3 text-center">
+                <h3 className="text-lg font-bold text-foreground">
+                  Mulai Belajar Sekarang
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Bergabung dengan ribuan siswa lainnya
+                </p>
+              </div>
+
+              <Button
+                className="w-full h-12 text-base font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                disabled={isEnrolling || isEnrollmentLoading}
+                onClick={() => enroll({ courseId: course._id })}
+                size="lg"
+              >
+                {isEnrolling ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {COURSE_DETAIL_COPY.enrollDialog.ctaProcessing}
+                  </>
+                ) : (
+                  COURSE_DETAIL_COPY.enrollDialog.ctaPrimary
+                )}
+              </Button>
+
+              <div className="rounded-lg bg-muted/30 p-3 text-center">
+                <p className="text-xs text-muted-foreground font-medium">
+                  {COURSE_DETAIL_COPY.enrollDialog.urgency}
+                </p>
+              </div>
+            </div>
+          )
+        ) : (
+          /* Sign In Required */
+          <div className="space-y-5 text-center">
+            <div className="space-y-3">
+              <h3 className="text-lg font-bold text-foreground">
+                Akses Diperlukan
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {COURSE_DETAIL_COPY.error.missingDataDesc}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-4">
+              <SignInButton fallbackRedirectUrl={pathname} mode="modal">
+                <Button
+                  className="w-full h-11 font-semibold"
+                  variant="secondary"
+                >
+                  Sign In Untuk Mulai Belajar
+                </Button>
+              </SignInButton>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Additional Info */}
+      {isDesktop && (
+        <div className="rounded-xl bg-muted/20 p-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            ✨ Akses seumur hidup • 📱 Belajar dimana saja
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  const body = isDesktop ? (
+    <div className="grid grid-cols-[minmax(0,1.8fr)_minmax(0,1.2fr)] gap-10 items-start">
+      {infoSection}
+      {actionSection}
+    </div>
+  ) : (
+    <div className="space-y-8 px-4">
+      {infoSection}
+      {actionSection}
+    </div>
+  );
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold leading-tight">
+              {course.title}
+            </DialogTitle>
+            {course.description && (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {course.description}
+              </p>
+            )}
+          </DialogHeader>
+          <div className="py-6">{body}</div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="flex flex-col max-h-[95vh] h-[95vh] overflow-y-scroll">
+        <DrawerHeader className="flex-shrink-0 space-y-3 text-left border-b border-border/60 pb-4">
+          <DrawerTitle className="text-xl font-bold leading-tight">
+            {course.title}
+          </DrawerTitle>
+          {course.description && (
+            <DrawerDescription className="text-sm leading-relaxed">
+              {course.description}
+            </DrawerDescription>
+          )}
+        </DrawerHeader>
+
+        <div className="flex-1">
+          <div className="py-4">{body}</div>
+        </div>
+
+        <DrawerFooter className="flex-shrink-0 border-t border-border/60 pt-4 bg-background backdrop-blur-sm">
+          <div className="text-center space-y-2">
+            <span className="text-xs text-muted-foreground font-medium">
+              {COURSE_DETAIL_COPY.urgency.startToday}
+            </span>
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <span>✨ Akses seumur hidup</span>
+              <span>•</span>
+              <span>📱 Belajar dimana saja</span>
+            </div>
+          </div>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
+}

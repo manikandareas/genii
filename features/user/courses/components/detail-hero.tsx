@@ -12,9 +12,11 @@ import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { usePathname } from "next/navigation";
 import { Loader } from "lucide-react";
+import { COURSE_DETAIL_COPY } from "../constants/course-detail-copy";
 
 type IDetailHero = {
   course: Doc<"courses">;
+  onEnrollClick: () => void;
 };
 
 export function DetailHero(props: IDetailHero) {
@@ -22,7 +24,19 @@ export function DetailHero(props: IDetailHero) {
     convexQuery(api.users.queries.getMe, {}),
   );
 
+  const { data: enrollment, isLoading: isEnrollmentLoading } = useQuery(
+    convexQuery(api.users.courses.queries.getEnrollmentForCourse, {
+      courseId: props.course._id,
+    }),
+  );
+
   const pathname = usePathname();
+  const hasUser = Boolean(user?._id);
+  const ctaLabel = hasUser
+    ? enrollment?._id
+      ? COURSE_DETAIL_COPY.cta.enrolled.continue
+      : COURSE_DETAIL_COPY.cta.notEnrolled.primary
+    : COURSE_DETAIL_COPY.ctaVariations.primary;
   return (
     <section className="flex flex-col items-center justify-center gap-8">
       <CourseBadge difficulty={props.course.difficulty} />
@@ -44,8 +58,14 @@ export function DetailHero(props: IDetailHero) {
       <p className="max-w-2xl text-pretty text-center text-base/7 leading-relaxed">
         {props.course.description}
       </p>
-      {user?._id && <Button>Enroll Sekarang</Button>}
-      {!user?._id && !isLoading ? (
+      {hasUser ? (
+        <Button
+          disabled={isEnrollmentLoading}
+          onClick={props.onEnrollClick}
+        >
+          {ctaLabel}
+        </Button>
+      ) : !isLoading ? (
         <SignInButton fallbackRedirectUrl={pathname} mode="modal">
           <Button>Sign In Untuk Belajar</Button>
         </SignInButton>

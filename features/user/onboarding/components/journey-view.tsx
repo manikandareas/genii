@@ -3,10 +3,10 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ArrowRight, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/features/shared/components/ui/button";
 import {
   Card,
@@ -20,6 +20,10 @@ import {
   type TimelineEntry,
 } from "@/features/shared/components/ui/timeline";
 import Image from "next/image";
+import {
+  CourseEnrollmentDialog,
+  type EnrollmentCourse,
+} from "@/features/user/courses/components/course-enrollment-dialog";
 
 type JourneyStage = "idle" | "collecting" | "ranking" | "completed" | "failed";
 
@@ -105,6 +109,11 @@ const difficultyLabels: Record<
 };
 
 export function JourneyView() {
+  const [selectedCourse, setSelectedCourse] = useState<EnrollmentCourse | null>(
+    null,
+  );
+  const [isEnrollmentOpen, setEnrollmentOpen] = useState(false);
+
   const { data, status, refetch, isFetching } = useQuery(
     convexQuery(
       api.users.recommendation.queries.getCurrentUserRecommendation,
@@ -122,6 +131,30 @@ export function JourneyView() {
       (a, b) => a.order - b.order,
     );
   }, [recommendationData?.recommendations]);
+
+  const handleOpenEnrollment = (
+    course: EnrichedCourseRecommendation["course"],
+  ) => {
+    const normalizedCourse: EnrollmentCourse = {
+      _id: course._id as Id<"courses">,
+      title: course.title,
+      description: course.description,
+      difficulty: course.difficulty,
+      learningOutcomes: undefined,
+      thumbnail: course.thumbnail ?? undefined,
+      slug: course.slug,
+    };
+
+    setSelectedCourse(normalizedCourse);
+    setEnrollmentOpen(true);
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setEnrollmentOpen(open);
+    if (!open) {
+      setSelectedCourse(null);
+    }
+  };
 
   const stage: JourneyStage = useMemo(() => {
     if (!recommendation) {
@@ -213,15 +246,13 @@ export function JourneyView() {
                 {difficultyLabels[item.course.difficulty]}
               </span>
               <Button
-                asChild
                 variant="outline"
                 size="sm"
                 className="w-full sm:w-auto"
+                onClick={() => handleOpenEnrollment(item.course)}
               >
-                <Link href="/courses">
-                  Mulai Belajar
-                  <ArrowRight className="size-4" />
-                </Link>
+                Mulai Belajar
+                <ArrowRight className="size-4" />
               </Button>
             </div>
           </CardContent>
@@ -328,6 +359,13 @@ export function JourneyView() {
           <Timeline data={courseTimelineData} />
         </div>
       </div>
+      {selectedCourse && (
+        <CourseEnrollmentDialog
+          course={selectedCourse}
+          open={isEnrollmentOpen}
+          onOpenChange={handleDialogChange}
+        />
+      )}
     </div>
   );
 }

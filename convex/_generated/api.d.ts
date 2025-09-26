@@ -25,6 +25,7 @@ import type * as components_ from "../components.js";
 import type * as http from "../http.js";
 import type * as lib from "../lib.js";
 import type * as users_actions from "../users/actions.js";
+import type * as users_courses_mutations from "../users/courses/mutations.js";
 import type * as users_courses_queries from "../users/courses/queries.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
@@ -66,6 +67,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   lib: typeof lib;
   "users/actions": typeof users_actions;
+  "users/courses/mutations": typeof users_courses_mutations;
   "users/courses/queries": typeof users_courses_queries;
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;

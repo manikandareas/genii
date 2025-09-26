@@ -1,8 +1,5 @@
 import { api } from "@/convex/_generated/api";
-import DetailContents from "@/features/user/courses/components/detail-contents";
-import { DetailHero } from "@/features/user/courses/components/detail-hero";
-import DetailPromo from "@/features/user/courses/components/detail-promo";
-import { currentUser } from "@clerk/nextjs/server";
+import { CourseDetailClient } from "@/features/user/courses/components/course-detail-client";
 import { fetchQuery } from "convex/nextjs";
 import { notFound } from "next/navigation";
 
@@ -25,11 +22,7 @@ export default async function CourseDetailPage(props: Props) {
 
   return (
     <div className="relative mx-auto w-full max-w-6xl space-y-36 px-6 py-8 md:py-16 xl:px-0">
-      <DetailHero course={course} />
-
-      <DetailContents course={course} />
-
-      <DetailPromo course={course} />
+      <CourseDetailClient course={course} />
     </div>
   );
 }

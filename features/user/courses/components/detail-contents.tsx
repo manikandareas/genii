@@ -1,3 +1,5 @@
+"use client";
+
 import { Doc } from "@/convex/_generated/dataModel";
 import { Badge } from "@/features/shared/components/ui/badge";
 import { Gamepad } from "lucide-react";

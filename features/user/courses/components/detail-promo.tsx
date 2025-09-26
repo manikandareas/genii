@@ -1,3 +1,5 @@
+"use client";
+
 import { Doc } from "@/convex/_generated/dataModel";
 import { COURSE_DETAIL_COPY } from "../constants/course-detail-copy";
 import Image from "next/image";
@@ -5,9 +7,10 @@ import { Button } from "@/features/shared/components/ui/button";
 
 interface DetailPromoProps {
   course: Doc<"courses">;
+  onEnrollClick: () => void;
 }
 
-export function DetailPromo({ course }: DetailPromoProps) {
+export function DetailPromo({ course, onEnrollClick }: DetailPromoProps) {
   return (
     <section
       className="relative mx-auto h-[24rem] w-full overflow-hidden rounded-xl border"
@@ -40,6 +43,7 @@ export function DetailPromo({ course }: DetailPromoProps) {
           <Button
             aria-label="Daftar kursus gratis sekarang"
             className="w-full md:w-fit"
+            onClick={onEnrollClick}
             type="button"
           >
             {COURSE_DETAIL_COPY.promo.cta}
