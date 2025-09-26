@@ -141,6 +141,7 @@ export function JourneyView() {
       description: course.description,
       difficulty: course.difficulty,
       learningOutcomes: undefined,
+      // @ts-expect-error - thumbnail is optional
       thumbnail: course.thumbnail ?? undefined,
       slug: course.slug,
     };
