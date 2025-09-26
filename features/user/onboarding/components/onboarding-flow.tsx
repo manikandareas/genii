@@ -117,7 +117,7 @@ export default function OnboardingFlow() {
         }
 
         setTimeout(() => {
-          router.push("/");
+          router.push("/onboarding/journey");
         }, 250);
       }
     },

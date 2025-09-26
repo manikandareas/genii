@@ -1,5 +1,5 @@
-import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
+import { v } from "convex/values";
 import { query } from "../../_generated/server";
 import { ensureAdmin } from "../../utils";
 
@@ -43,5 +43,14 @@ export const getById = query({
 
     const asset = await ctx.db.get(assetId);
     return asset ?? null;
+  },
+});
+
+export const getThumbnailUrl = query({
+  args: {
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, { storageId }) => {
+    return await ctx.storage.getUrl(storageId);
   },
 });

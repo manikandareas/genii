@@ -137,6 +137,11 @@ export const update = mutation({
       }
     }
 
+    if (!rest.thumbnail?.url && rest.thumbnail?.assetRef) {
+      const thumbnailUrl = await ctx.storage.getUrl(rest.thumbnail.assetRef);
+      rest.thumbnail.url = thumbnailUrl ?? undefined;
+    }
+
     const updates: Record<string, unknown> = { updatedAt: now() };
     if (slug !== undefined) updates.slug = slug;
     if (topicIds !== undefined) updates.topicIds = topicIds;
@@ -149,17 +154,17 @@ export const update = mutation({
 
     await ctx.db.patch(courseId, updates);
 
-    await ctx.scheduler.runAfter(
-      0,
-      internal.admin.courses.actions.generateAndStoreCourseEmbeddings,
-      {
-        id: courseId,
-        title: existing.title,
-        slug: existing.slug,
-        description: existing.description,
-        difficulty: existing.difficulty,
-      },
-    );
+    // await ctx.scheduler.runAfter(
+    //   0,
+    //   internal.admin.courses.actions.generateAndStoreCourseEmbeddings,
+    //   {
+    //     id: courseId,
+    //     title: existing.title,
+    //     slug: existing.slug,
+    //     description: existing.description,
+    //     difficulty: existing.difficulty,
+    //   },
+    // );
     return await ctx.db.get(courseId);
   },
 });
