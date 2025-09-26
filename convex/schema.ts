@@ -1,7 +1,8 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { typedV } from "convex-helpers/validators";
 
-export default defineSchema({
+const schema = defineSchema({
   users: defineTable({
     clerkId: v.string(),
     username: v.string(),
@@ -15,8 +16,6 @@ export default defineSchema({
       v.union(v.literal("not_started"), v.literal("completed")),
     ),
     learningGoals: v.optional(v.array(v.string())),
-    studyReason: v.optional(v.string()),
-    studyPlan: v.optional(v.string()),
     level: v.optional(
       v.union(
         v.literal("beginner"),
@@ -27,9 +26,7 @@ export default defineSchema({
     studyStreak: v.optional(v.number()),
     streakStartDate: v.optional(v.number()),
     explanationStyle: v.optional(v.string()),
-    languagePreference: v.optional(
-      v.union(v.literal("id"), v.literal("en"), v.literal("mix")),
-    ),
+    languagePreference: v.optional(v.union(v.literal("id"), v.literal("en"))),
     analytics: v.optional(
       v.object({
         totalXP: v.optional(v.number()),
@@ -50,9 +47,14 @@ export default defineSchema({
       }),
     ),
     lastEmailSent: v.optional(v.number()),
+    embedding: v.optional(v.array(v.float64())),
   })
     .index("by_clerk", ["clerkId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+    }),
 
   topics: defineTable({
     title: v.string(),
@@ -93,11 +95,16 @@ export default defineSchema({
     featured: v.optional(v.boolean()),
     readonly: v.optional(v.boolean()),
     resourcesDigest: v.optional(v.string()),
+    embedding: v.optional(v.array(v.float64())),
     updatedAt: v.number(),
   })
     .index("by_slug", ["slug"])
     .index("by_difficulty", ["difficulty"])
-    .index("by_featured", ["featured"]),
+    .index("by_featured", ["featured"])
+    .vectorIndex("by_embedding", {
+      vectorField: "embedding",
+      dimensions: 1536,
+    }),
 
   chapters: defineTable({
     courseId: v.id("courses"),
@@ -244,21 +251,19 @@ export default defineSchema({
       v.literal("failed"),
     ),
     query: v.string(),
-    createdForUserId: v.optional(v.id("users")),
+    createdFor: v.optional(v.id("users")),
     summary: v.optional(v.string()),
     recommendations: v.optional(
       v.array(
         v.object({
           courseId: v.optional(v.id("courses")),
-          courseSlug: v.optional(v.string()),
           reason: v.optional(v.string()),
-          data: v.optional(v.string()),
+          order: v.number(),
         }),
       ),
     ),
-    message: v.optional(v.string()),
-    updatedAt: v.number(),
-  }).index("by_user", ["createdForUserId"]),
+    generationMessage: v.optional(v.string()),
+  }).index("by_user", ["createdFor"]),
 
   /**
    * Legacy conversation structure (kept for backward compatibility during rollout)
@@ -279,3 +284,7 @@ export default defineSchema({
     .index("by_section_key", ["sectionKey"])
     .index("by_lesson_id", ["lessonId"]),
 });
+
+export default schema;
+
+export const vv = typedV(schema);

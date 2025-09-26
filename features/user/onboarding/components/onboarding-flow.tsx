@@ -20,14 +20,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/features/shared/components/ui/form";
+import { Progress } from "@/features/shared/components/ui/progress";
 import { FocusSelectionCards } from "@/features/user/onboarding/components/focus-selection-cards";
 import { LanguageStyleCards } from "@/features/user/onboarding/components/language-style-cards";
 import { LevelSelectionCards } from "@/features/user/onboarding/components/level-selection-cards";
 import { ONBOARDING_COPY } from "@/features/user/onboarding/constants/onboarding-copy";
-import { cn } from "@/lib/utils";
+import { useConvexAction, useConvexMutation } from "@convex-dev/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { useConvexMutation } from "@convex-dev/react-query";
-import { Progress } from "@/features/shared/components/ui/progress";
 
 const formSchema = z.object({
   learningGoals: z
@@ -37,7 +36,7 @@ const formSchema = z.object({
   level: z.enum(["beginner", "intermediate", "advanced"], {
     error: ONBOARDING_COPY.validation.levelRequired,
   }),
-  languagePreference: z.enum(["id", "en", "mix"], {
+  languagePreference: z.enum(["id", "en"], {
     error: ONBOARDING_COPY.validation.languageRequired,
   }),
   explanationStyle: z
@@ -80,8 +79,48 @@ const getFieldsForStep = (step: number): (keyof FormValues)[] => {
 
 export default function OnboardingFlow() {
   const router = useRouter();
+
+  const updateClerkMetadata = useConvexAction(
+    api.users.actions.updateClerkPublicMetadata,
+  );
+
   const { mutateAsync: saveOnboarding, isPending } = useMutation({
     mutationFn: useConvexMutation(api.users.mutations.saveOnboarding),
+    onSuccess: async (res: {
+      clerkId: string;
+      onboardingStatus: string;
+      role: string;
+      otherMetadata: Record<string, string>;
+    }) => {
+      const response = await updateClerkMetadata({
+        clerkId: res.clerkId,
+        onboardingStatus: res.onboardingStatus,
+        role: res.role,
+        otherMetadata: res.otherMetadata,
+      });
+
+      if (response.success) {
+        toast.success(ONBOARDING_COPY.success.title, {
+          description: ONBOARDING_COPY.success.description,
+        });
+
+        try {
+          confetti({
+            particleCount: 120,
+            spread: 70,
+            startVelocity: 30,
+            scalar: 0.9,
+            origin: { y: 0.7 },
+          });
+        } catch {
+          // no-op if confetti fails
+        }
+
+        setTimeout(() => {
+          router.push("/");
+        }, 250);
+      }
+    },
   });
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -138,27 +177,6 @@ export default function OnboardingFlow() {
   const onSubmit = async (values: FormValues) => {
     try {
       await saveOnboarding(values);
-
-      try {
-        confetti({
-          particleCount: 120,
-          spread: 70,
-          startVelocity: 30,
-          scalar: 0.9,
-          origin: { y: 0.7 },
-        });
-      } catch (error) {
-        console.warn("Confetti failed", error);
-      }
-
-      toast.success(ONBOARDING_COPY.success.title, {
-        description: ONBOARDING_COPY.success.description,
-      });
-
-      setTimeout(() => {
-        router.replace("/courses");
-        router.refresh();
-      }, 300);
     } catch (error) {
       console.error("Failed to save onboarding preferences", error);
       toast.error("Gagal menyimpan preferensi. Coba lagi ya.");

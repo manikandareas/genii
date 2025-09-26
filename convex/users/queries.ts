@@ -10,7 +10,6 @@ export const assertUserAuthenticated = query({
       return null;
     }
 
-    console.log("identity", identity);
     const user = await ctx.db
       .query("users")
       .withIndex("by_clerk", (q) => q.eq("clerkId", identity.subject))
@@ -58,5 +57,12 @@ export const getUserByClerkId = query({
       .query("users")
       .withIndex("by_clerk", (q) => q.eq("clerkId", clerkId))
       .first();
+  },
+});
+
+export const getUserById = query({
+  args: { id: v.id("users") },
+  handler: async (ctx, { id }) => {
+    return ctx.db.get(id);
   },
 });

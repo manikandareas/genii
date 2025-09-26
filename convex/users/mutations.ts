@@ -1,8 +1,9 @@
 import { UserJSON } from "@clerk/backend";
 import { v, Validator } from "convex/values";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { Doc } from "../_generated/dataModel";
 import { internalMutation, mutation } from "../_generated/server";
+import { workflow } from "../components";
 import { ensureAuthenticated } from "../utils";
 
 export const deleteFromClerk = internalMutation({
@@ -64,6 +65,19 @@ export const upsertFromClerk = internalMutation({
   },
 });
 
+export const kickoffRecommendationWorkflow = internalMutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { userId }) => {
+    await workflow.start(
+      ctx,
+      internal.users.recommendation.workflow.recommendationWorkflow,
+      { userId },
+    );
+  },
+});
+
 export const saveOnboarding = mutation({
   args: {
     learningGoals: v.array(v.string()),
@@ -72,11 +86,7 @@ export const saveOnboarding = mutation({
       v.literal("intermediate"),
       v.literal("advanced"),
     ),
-    languagePreference: v.union(
-      v.literal("id"),
-      v.literal("en"),
-      v.literal("mix"),
-    ),
+    languagePreference: v.union(v.literal("id"), v.literal("en")),
     explanationStyle: v.string(),
   },
   handler: async (ctx, args) => {
@@ -92,6 +102,7 @@ export const saveOnboarding = mutation({
       .first();
 
     if (!user) {
+      // we need to create a user
       throw new Error("User not found");
     }
 
@@ -103,6 +114,27 @@ export const saveOnboarding = mutation({
       onboardingStatus: "completed",
     });
 
-    return { success: true } as const;
+    await ctx.scheduler.runAfter(
+      0,
+      internal.users.mutations.kickoffRecommendationWorkflow,
+      { userId: user._id },
+    );
+
+    return {
+      clerkId: identity.subject,
+      onboardingStatus: "completed",
+      role: "student",
+      otherMetadata: {},
+    };
+  },
+});
+
+export const saveEmbeddings = mutation({
+  args: {
+    id: v.id("users"),
+    embeddings: v.array(v.float64()),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { embedding: args.embeddings });
   },
 });

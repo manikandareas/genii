@@ -1,6 +1,7 @@
 import { mutation } from "../../_generated/server";
 import { v } from "convex/values";
 import { ensureAdmin } from "../../utils";
+import { internal } from "../../_generated/api";
 
 const now = () => Date.now();
 
@@ -66,6 +67,18 @@ export const create = mutation({
       ...args,
       updatedAt: now(),
     });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.admin.courses.actions.generateAndStoreCourseEmbeddings,
+      {
+        id: courseId,
+        title: args.title,
+        slug: args.slug,
+        description: args.description,
+        difficulty: args.difficulty,
+      },
+    );
 
     return courseId;
   },
@@ -135,6 +148,18 @@ export const update = mutation({
     }
 
     await ctx.db.patch(courseId, updates);
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.admin.courses.actions.generateAndStoreCourseEmbeddings,
+      {
+        id: courseId,
+        title: existing.title,
+        slug: existing.slug,
+        description: existing.description,
+        difficulty: existing.difficulty,
+      },
+    );
     return await ctx.db.get(courseId);
   },
 });
@@ -181,5 +206,15 @@ export const remove = mutation({
 
     await ctx.db.delete(courseId);
     return true;
+  },
+});
+
+export const saveEmbedding = mutation({
+  args: {
+    courseId: v.id("courses"),
+    embedding: v.array(v.float64()),
+  },
+  handler: async (ctx, { courseId, embedding }) => {
+    await ctx.db.patch(courseId, { embedding });
   },
 });
