@@ -1,6 +1,6 @@
 import { getAll } from "convex-helpers/server/relationships";
 import { v } from "convex/values";
-import { internalQuery } from "../../_generated/server";
+import { internalQuery, query } from "../../_generated/server";
 
 export const findCoursesByIds = internalQuery({
   args: {
@@ -8,5 +8,11 @@ export const findCoursesByIds = internalQuery({
   },
   handler: async (ctx, { ids }) => {
     return await getAll(ctx.db, ids);
+  },
+});
+
+export const getCourses = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("courses").collect();
   },
 });

@@ -31,11 +31,6 @@ export function Navbar() {
       link: "/progress",
       isAuthRequired: true,
     },
-    {
-      name: NAVBAR_COPY.navigation.community,
-      link: "/threads",
-      upcoming: true,
-    },
   ];
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
