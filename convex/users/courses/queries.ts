@@ -16,3 +16,15 @@ export const getCourses = query({
     return await ctx.db.query("courses").collect();
   },
 });
+
+export const getCourseBySlug = query({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, { slug }) => {
+    return await ctx.db
+      .query("courses")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+  },
+});
