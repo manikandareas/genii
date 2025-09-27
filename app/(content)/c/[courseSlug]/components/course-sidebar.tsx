@@ -6,17 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCourseContent } from "../course-content-context";
 
-function formatDuration(minutes: number) {
-  if (minutes < 60) {
-    return `${minutes} m`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-
-  return remainingMinutes ? `${hours} j ${remainingMinutes} m` : `${hours} j`;
-}
-
 const statusIcon = (status: string) => {
   switch (status) {
     case "completed":
@@ -33,17 +22,10 @@ export default function CourseSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="relative hidden h-screen w-[320px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_0_40px_hsl(var(--muted)/0.35)] lg:flex">
+    <aside className="fixed left-0 top-0 z-50 hidden h-screen w-[320px] flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[0_0_40px_hsl(var(--muted)/0.35)] lg:flex">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--sidebar-primary)/0.15),transparent_55%)]" />
       <div className="absolute inset-0 bg-gradient-to-b from-sidebar-accent/5 via-transparent to-sidebar-accent/5" />
       <div className="relative flex h-full flex-col gap-8 pb-8 pt-8">
-        {/* <div className="flex items-center justify-between gap-3">
-          <button className="flex items-center gap-2 rounded-full border border-sidebar-border bg-sidebar-accent px-3 py-1.5 text-xs font-medium text-sidebar-accent-foreground transition hover:border-sidebar-border/60 hover:bg-sidebar-accent/80">
-            <ChevronLeft className="h-4 w-4" />
-            Kembali
-          </button>
-        </div> */}
-
         <div className="mx-6 relative flex items-center gap-3 rounded-full border border-sidebar-border bg-sidebar-accent px-4 py-2 text-sm text-sidebar-foreground shadow-inner focus-within:border-sidebar-border/60">
           <Search className="h-4 w-4 text-sidebar-foreground/60" />
           <input
@@ -93,9 +75,6 @@ export default function CourseSidebar() {
                             <p className="text-sm font-semibold leading-tight text-inherit">
                               {item.doc.title}
                             </p>
-                            <span className="text-[11px] uppercase tracking-wide text-sidebar-foreground/60">
-                              {formatDuration(item.estimatedDurationMinutes)}
-                            </span>
                           </div>
                           <p className="line-clamp-2 text-xs text-sidebar-foreground/70">
                             {item.summary}
