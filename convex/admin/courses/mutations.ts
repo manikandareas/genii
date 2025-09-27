@@ -106,7 +106,7 @@ export const update = mutation({
     trailerUrl: v.optional(v.string()),
     resourcesDigest: v.optional(v.string()),
   },
-  handler: async (ctx, { courseId, slug, topicIds, ...rest }) => {
+  handler: async (ctx, { courseId, slug, topicIds, title, description, difficulty, ...rest }) => {
     const identity = await ensureAdmin(ctx);
     if (!identity) {
       throw new Error("Unauthorized");
@@ -145,6 +145,9 @@ export const update = mutation({
     const updates: Record<string, unknown> = { updatedAt: now() };
     if (slug !== undefined) updates.slug = slug;
     if (topicIds !== undefined) updates.topicIds = topicIds;
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (difficulty !== undefined) updates.difficulty = difficulty;
 
     for (const [key, value] of Object.entries(rest)) {
       if (value !== undefined) {
@@ -154,17 +157,27 @@ export const update = mutation({
 
     await ctx.db.patch(courseId, updates);
 
-    // await ctx.scheduler.runAfter(
-    //   0,
-    //   internal.admin.courses.actions.generateAndStoreCourseEmbeddings,
-    //   {
-    //     id: courseId,
-    //     title: existing.title,
-    //     slug: existing.slug,
-    //     description: existing.description,
-    //     difficulty: existing.difficulty,
-    //   },
-    // );
+    // Check if any of the fields that affect embeddings have changed
+    const hasEmbeddingRelevantChanges = 
+      (title !== undefined && title !== existing.title) ||
+      (slug !== undefined && slug !== existing.slug) ||
+      (description !== undefined && description !== existing.description) ||
+      (difficulty !== undefined && difficulty !== existing.difficulty);
+
+    if (hasEmbeddingRelevantChanges) {
+      await ctx.scheduler.runAfter(
+        0,
+        internal.admin.courses.actions.generateAndStoreCourseEmbeddings,
+        {
+          id: courseId,
+          title: title ?? existing.title,
+          slug: slug ?? existing.slug,
+          description: description ?? existing.description,
+          difficulty: difficulty ?? existing.difficulty,
+        },
+      );
+    }
+
     return await ctx.db.get(courseId);
   },
 });

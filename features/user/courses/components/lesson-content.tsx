@@ -186,7 +186,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="items-center gap-3 hidden md:flex">
           <Button
             className="text-muted-foreground"
             size="icon"
@@ -238,14 +238,14 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         </Button>
       </div>
 
-      <footer className="flex flex-col gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] md:flex-row md:items-center md:justify-between">
+      <footer className="flex gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] items-center justify-between">
         {previousItem && (
           <Link
             href={buildHref(course.slug, previousItem)}
-            className="group flex min-w-[180px] items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground transition hover:border-border/60 hover:bg-muted hover:text-foreground"
+            className="group flex md:min-w-[180px] items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground transition hover:border-border/60 hover:bg-muted hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
-            <div className="flex flex-col text-left">
+            <div className="flex-col text-left hidden md:flex">
               <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 {resolveTypeLabel(previousItem)} Sebelumnya
               </span>
@@ -253,15 +253,18 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
                 {previousItem.doc.title}
               </span>
             </div>
+            <span className="text-sm font-semibold text-inherit md:hidden">
+              Sebelumnya
+            </span>
           </Link>
         )}
 
         {nextItem && (
           <Link
             href={buildHref(course.slug, nextItem)}
-            className="group flex min-w-[200px] items-center gap-2 rounded-full border border-highlight/40 bg-highlight/20 px-4 py-2 text-highlight transition hover:border-highlight/60 hover:bg-highlight/30"
+            className="group flex md:min-w-[200px] items-center gap-2 rounded-full border border-highlight/40 bg-highlight/20 px-4 py-2 text-highlight transition hover:border-highlight/60 hover:bg-highlight/30"
           >
-            <div className="flex flex-col text-left">
+            <div className=" flex-col text-left hidden md:flex">
               <span className="text-[11px] uppercase tracking-wide text-highlight/70">
                 {resolveTypeLabel(nextItem)} Berikutnya
               </span>
@@ -269,6 +272,9 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
                 {nextItem.doc.title}
               </span>
             </div>
+            <span className="text-sm font-semibold text-highlight md:hidden">
+              Lanjut
+            </span>
             <ChevronRight className="h-4 w-4" />
           </Link>
         )}
