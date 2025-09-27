@@ -1,16 +1,30 @@
 'use client';
 
 import React from "react";
-import type { CourseContentData, CourseContentItem } from "./types";
 
-type CourseContentContextValue = CourseContentData & {
+import { applyEnrollmentToChapters, getOrderedContents } from "./content-utils";
+import type {
+  CourseChapter,
+  CourseContentData,
+  CourseContentItem,
+} from "./types";
+import type { Doc } from "@/convex/_generated/dataModel";
+import { api } from "@/convex/_generated/api";
+import { convexQuery } from "@convex-dev/react-query";
+import { useQuery } from "@tanstack/react-query";
+import isEqual from "lodash/isEqual";
+
+type CourseContentContextValue = {
+  course: CourseContentData["course"];
+  chapters: CourseChapter[];
   orderedContents: CourseContentItem[];
   getContentBySlug: (slug: string) => CourseContentItem | undefined;
+  enrollment: Doc<"course_enrollments"> | null;
+  updateEnrollment: (next: Doc<"course_enrollments"> | null) => void;
 };
 
-const CourseContentContext = React.createContext<CourseContentContextValue | null>(
-  null,
-);
+const CourseContentContext =
+  React.createContext<CourseContentContextValue | null>(null);
 
 interface CourseContentProviderProps {
   value: CourseContentData;
@@ -21,14 +35,49 @@ export function CourseContentProvider({
   value,
   children,
 }: CourseContentProviderProps) {
-  const [courseData] = React.useState(value);
+  const [course] = React.useState(value.course);
+  const [chapters] = React.useState<CourseChapter[]>(value.chapters);
+  const [enrollment, setEnrollment] =
+    React.useState<Doc<"course_enrollments"> | null>(value.enrollment);
+
+  const { data: remoteEnrollment } = useQuery(
+    convexQuery(api.users.courses.queries.getEnrollmentForCourse, {
+      courseId: course._id,
+    }),
+  );
+
+  React.useEffect(() => {
+    if (remoteEnrollment === undefined) {
+      return;
+    }
+
+    setEnrollment((prev) => {
+      if (prev === remoteEnrollment) {
+        return prev;
+      }
+
+      if (
+        prev &&
+        remoteEnrollment &&
+        prev._id === remoteEnrollment._id &&
+        prev.updatedAt === remoteEnrollment.updatedAt &&
+        isEqual(prev.contentsCompleted, remoteEnrollment.contentsCompleted)
+      ) {
+        return prev;
+      }
+
+      return remoteEnrollment ?? null;
+    });
+  }, [remoteEnrollment]);
+
+  const chaptersWithStatus = React.useMemo(
+    () => applyEnrollmentToChapters(chapters, enrollment),
+    [chapters, enrollment],
+  );
 
   const orderedContents = React.useMemo(
-    () =>
-      courseData.chapters
-        .flatMap((chapter) => chapter.contents)
-        .sort((a, b) => a.order - b.order),
-    [courseData],
+    () => getOrderedContents(chaptersWithStatus),
+    [chaptersWithStatus],
   );
 
   const getContentBySlug = React.useCallback(
@@ -38,11 +87,14 @@ export function CourseContentProvider({
 
   const contextValue = React.useMemo<CourseContentContextValue>(
     () => ({
-      ...courseData,
+      course,
+      chapters: chaptersWithStatus,
       orderedContents,
       getContentBySlug,
+      enrollment,
+      updateEnrollment: setEnrollment,
     }),
-    [courseData, getContentBySlug, orderedContents],
+    [course, chaptersWithStatus, orderedContents, getContentBySlug, enrollment],
   );
 
   return (
