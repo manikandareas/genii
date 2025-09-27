@@ -57,7 +57,7 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
 
   if (!currentItem || currentItem.type !== "quiz") {
     return (
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-10 text-center text-white/70">
+      <div className="rounded-3xl border border-border bg-card p-10 text-center text-muted-foreground">
         Quiz tidak ditemukan di data dummy. Pastikan slug sesuai dengan struktur mock data.
       </div>
     );
@@ -73,19 +73,19 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
     <div className="space-y-12">
       <header className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-6">
-          <div className="flex flex-wrap items-center gap-3 text-sm text-white/50">
-            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 font-semibold uppercase tracking-wide text-white/70">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span className="rounded-full border border-border bg-card px-3 py-1 font-semibold uppercase tracking-wide text-card-foreground">
               {chapterMeta?.chapter.title ?? "Quiz"}
             </span>
-            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <span className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1">
               <Clock className="h-4 w-4 text-highlight" />
               {formatDuration(currentItem.estimatedDurationMinutes)}
             </span>
-            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <span className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1">
               <HelpCircle className="h-4 w-4 text-highlight" />
               {questionCount} Pertanyaan
             </span>
-            <span className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+            <span className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1">
               <Sparkles className="h-4 w-4 text-highlight" />
               {course.difficulty === "beginner"
                 ? "Beginner"
@@ -95,27 +95,27 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
             </span>
           </div>
           <div className="space-y-4">
-            <p className="text-sm uppercase tracking-[0.35em] text-white/50">{course.title}</p>
-            <h1 className="text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl">
+            <p className="text-sm uppercase tracking-[0.35em] text-muted-foreground">{course.title}</p>
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl">
               {currentItem.doc.title}
             </h1>
-            <p className="max-w-3xl text-lg text-white/70">{currentItem.summary}</p>
+            <p className="max-w-3xl text-lg text-muted-foreground">{currentItem.summary}</p>
           </div>
-          <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70 md:grid-cols-2">
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+          <div className="grid gap-4 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground md:grid-cols-2">
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3">
               <Target className="h-5 w-5 text-highlight" />
               <div>
-                <p className="text-xs uppercase tracking-wide text-white/40">Tujuan</p>
-                <p className="font-semibold text-white">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Tujuan</p>
+                <p className="font-semibold text-foreground">
                   Validasi pemahaman modul {chapterMeta?.chapter.title ?? "terkait"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted px-4 py-3">
               <ShieldCheck className="h-5 w-5 text-highlight" />
               <div>
-                <p className="text-xs uppercase tracking-wide text-white/40">Percobaan</p>
-                <p className="font-semibold text-white">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Percobaan</p>
+                <p className="font-semibold text-foreground">
                   {currentItem.doc.maxAttempt ? `${currentItem.doc.maxAttempt} kali` : 'Tak terbatas'}
                 </p>
               </div>
@@ -141,39 +141,39 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
           ) : null}
         </section>
 
-        <aside className="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_35px_80px_rgba(9,12,32,0.45)]">
+        <aside className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 shadow-[0_35px_80px_hsl(var(--muted)/0.45)]">
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(34,197,94,0.25),transparent_65%)]" />
-          <div className="space-y-5 text-white/80">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs uppercase tracking-[0.35em] text-white/50">Statistik Kursus</p>
-              <div className="mt-4 grid grid-cols-3 gap-4 text-center text-white">
+          <div className="space-y-5 text-card-foreground">
+            <div className="rounded-2xl border border-border bg-muted p-4">
+              <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Statistik Kursus</p>
+              <div className="mt-4 grid grid-cols-3 gap-4 text-center text-foreground">
                 <div>
                   <p className="text-lg font-semibold">{course.totalLessons}</p>
-                  <p className="text-[11px] uppercase tracking-wide text-white/50">Pelajaran</p>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Pelajaran</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold">{course.totalQuizzes}</p>
-                  <p className="text-[11px] uppercase tracking-wide text-white/50">Quiz</p>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Quiz</p>
                 </div>
                 <div>
                   <p className="text-lg font-semibold">{chapters.length}</p>
-                  <p className="text-[11px] uppercase tracking-wide text-white/50">Bab</p>
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Bab</p>
                 </div>
               </div>
             </div>
-            <div className="space-y-3 text-sm text-white/70">
-              <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted px-4 py-3">
                 <ListChecks className="mt-1 h-5 w-5 text-highlight" />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-white/40">Tips</p>
-                  <p className="text-white/80">Baca ulang catatan dari pelajaran sebelumnya sebelum memulai quiz.</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Tips</p>
+                  <p className="text-card-foreground">Baca ulang catatan dari pelajaran sebelumnya sebelum memulai quiz.</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-muted px-4 py-3">
                 <Sparkles className="mt-1 h-5 w-5 text-highlight" />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-white/40">Skor</p>
-                  <p className="text-white/80">Anda akan mendapatkan poin ekstra untuk menjawab cepat dan tepat.</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Skor</p>
+                  <p className="text-card-foreground">Anda akan mendapatkan poin ekstra untuk menjawab cepat dan tepat.</p>
                 </div>
               </div>
             </div>
@@ -181,9 +181,9 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
         </aside>
       </header>
 
-      <section className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-6 text-white/70 md:grid-cols-2">
+      <section className="grid gap-4 rounded-3xl border border-border bg-card p-6 text-muted-foreground md:grid-cols-2">
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.35em] text-white/50">Sebelum Mulai</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">Sebelum Mulai</h2>
           <ul className="space-y-2 text-sm">
             <li>Kuis bersifat adaptif—pertanyaan akan menyesuaikan dengan jawaban Anda.</li>
             <li>Gunakan waktu sebaik mungkin, tapi Anda bisa menjeda jika dibutuhkan.</li>
@@ -191,7 +191,7 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
           </ul>
         </div>
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.35em] text-white/50">Setelah Selesai</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.35em] text-muted-foreground">Setelah Selesai</h2>
           <ul className="space-y-2 text-sm">
             <li>Skor akan langsung tersimpan ke progres kursus Anda.</li>
             <li>Dapatkan rekomendasi materi lanjutan berdasarkan performa.</li>
@@ -200,19 +200,19 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
         </div>
       </section>
 
-      <footer className="flex flex-col gap-6 rounded-3xl border border-white/10 bg-white/5 p-6 text-sm text-white/70 shadow-[0_20px_60px_rgba(9,10,30,0.45)] md:flex-row md:items-center md:justify-between">
-        <div className="text-sm text-white/60">
+      <footer className="flex flex-col gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] md:flex-row md:items-center md:justify-between">
+        <div className="text-sm text-muted-foreground">
           Simulasi quiz: hubungkan tombol &ldquo;Mulai Quiz&rdquo; dengan alur Convex untuk memuat soal secara real-time.
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
           {previousItem && (
             <Link
               href={buildHref(course.slug, previousItem)}
-              className="group flex min-w-[180px] items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-white/75 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+              className="group flex min-w-[180px] items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground transition hover:border-border/60 hover:bg-muted hover:text-foreground"
             >
               <ChevronLeft className="h-4 w-4" />
               <div className="flex flex-col text-left">
-                <span className="text-[11px] uppercase tracking-wide text-white/40">
+                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
                   {resolveTypeLabel(previousItem)} Sebelumnya
                 </span>
                 <span className="text-sm font-semibold text-inherit">
