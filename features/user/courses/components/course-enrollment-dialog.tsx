@@ -1,18 +1,19 @@
 "use client";
 
-import { Fragment, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
-import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { SignInButton } from "@clerk/nextjs";
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, Loader2, Sparkles, Trophy } from "lucide-react";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { queryClient } from "@/contexts/convex-client-provider";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
-import { queryClient } from "@/contexts/convex-client-provider";
+import { Badge } from "@/features/shared/components/ui/badge";
 import { Button } from "@/features/shared/components/ui/button";
 import {
   Dialog,
@@ -28,10 +29,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/features/shared/components/ui/drawer";
-import { Badge } from "@/features/shared/components/ui/badge";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { COURSE_DETAIL_COPY } from "../constants/course-detail-copy";
 import { CourseBadge } from "./course-badge";
-import { useMediaQuery } from "@/hooks/use-media-query";
 
 export type EnrollmentCourse = Pick<
   Doc<"courses">,
@@ -51,6 +51,12 @@ type CourseEnrollmentDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+type CourseContentTarget = {
+  id: string;
+  slug: string;
+  type: "lesson" | "quiz";
+};
+
 export function CourseEnrollmentDialog({
   course,
   open,
@@ -58,6 +64,7 @@ export function CourseEnrollmentDialog({
 }: CourseEnrollmentDialogProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const pathname = usePathname();
+  const router = useRouter();
 
   const userQuery = useQuery(convexQuery(api.users.queries.getMe, {}));
 
@@ -72,6 +79,13 @@ export function CourseEnrollmentDialog({
   const { data: enrollment, isLoading: isEnrollmentLoading } = useQuery(
     enrollmentQueryOptions,
   );
+
+  const courseContentResult = useQuery(
+    convexQuery(api.users.courses.queries.getCourseContent, {
+      courseSlug: course.slug as string,
+    }),
+  );
+  const courseContent = courseContentResult.data;
 
   const enrollMutation = useConvexMutation(
     api.users.courses.mutations.enrollInCourse,
@@ -102,6 +116,115 @@ export function CourseEnrollmentDialog({
 
   const isAuthenticated = Boolean(userQuery.data?._id);
   const alreadyEnrolled = Boolean(enrollment?._id);
+
+  const orderedCourseContents = useMemo<CourseContentTarget[]>(() => {
+    if (!courseContent?.chapters?.length) {
+      return [];
+    }
+
+    const sortedChapters = [...courseContent.chapters].sort((a, b) => {
+      const aPosition = a.position ?? a._creationTime;
+      const bPosition = b.position ?? b._creationTime;
+      return aPosition - bPosition;
+    });
+
+    const items: CourseContentTarget[] = [];
+
+    sortedChapters.forEach((chapter) => {
+      const sortedEntries = (chapter.contentOrder ?? [])
+        .map((entry, index) => ({ entry, index }))
+        .sort((a, b) => {
+          const aPosition = a.entry.position ?? a.index;
+          const bPosition = b.entry.position ?? b.index;
+          return aPosition - bPosition;
+        });
+
+      sortedEntries.forEach(({ entry }) => {
+        if (!entry?.contentId || !entry.contentType) {
+          return;
+        }
+
+        const contentId = String(entry.contentId);
+
+        if (entry.contentType === "lesson") {
+          const lesson = courseContent.lessons?.[contentId];
+          if (lesson?.slug) {
+            items.push({
+              id: contentId,
+              slug: lesson.slug,
+              type: "lesson",
+            });
+          }
+        }
+
+        if (entry.contentType === "quiz") {
+          const quiz = courseContent.quizzes?.[contentId];
+          if (quiz?.slug) {
+            items.push({
+              id: contentId,
+              slug: quiz.slug,
+              type: "quiz",
+            });
+          }
+        }
+      });
+    });
+
+    return items;
+  }, [courseContent]);
+
+  const { nextContent, isReviewMode } = useMemo(() => {
+    if (!orderedCourseContents.length) {
+      return { nextContent: null, isReviewMode: false } as const;
+    }
+
+    const completedIds = new Set(
+      (enrollment?.contentsCompleted ?? []).map((entry) => entry.contentId),
+    );
+
+    const firstIncompleteIndex = orderedCourseContents.findIndex(
+      (content) => !completedIds.has(content.id),
+    );
+
+    if (firstIncompleteIndex === -1) {
+      return {
+        nextContent: orderedCourseContents[0],
+        isReviewMode: true,
+      } as const;
+    }
+
+    return {
+      nextContent: orderedCourseContents[firstIncompleteIndex],
+      isReviewMode: false,
+    } as const;
+  }, [orderedCourseContents, enrollment?.contentsCompleted]);
+
+  const nextContentHref = useMemo(() => {
+    if (!nextContent || !course.slug) {
+      return null;
+    }
+
+    if (nextContent.type === "lesson") {
+      return `/courses/${course.slug}/l/${nextContent.slug}`;
+    }
+
+    if (nextContent.type === "quiz") {
+      return `/courses/${course.slug}/q/${nextContent.slug}`;
+    }
+
+    return null;
+  }, [nextContent, course.slug]);
+
+  const enrolledCtaLabel = isReviewMode
+    ? COURSE_DETAIL_COPY.cta.enrolled.review
+    : COURSE_DETAIL_COPY.cta.enrolled.continue;
+
+  const handleContinueClick = useCallback(() => {
+    if (nextContentHref) {
+      router.push(nextContentHref);
+    }
+    onOpenChange(false);
+  }, [nextContentHref, onOpenChange, router]);
 
   const learningOutcomes = useMemo(() => {
     const fallback = COURSE_DETAIL_COPY.contents.outcomes
@@ -231,17 +354,17 @@ export function CourseEnrollmentDialog({
               <div className="flex flex-col gap-3">
                 <Button
                   className="w-full h-11 font-semibold bg-emerald-600 text-white hover:bg-emerald-700"
-                  onClick={() => onOpenChange(false)}
+                  onClick={handleContinueClick}
                 >
-                  {COURSE_DETAIL_COPY.cta.enrolled.continue}
+                  {enrolledCtaLabel}
                 </Button>
-                <Button
+                {/* <Button
                   className="w-full h-11 font-medium"
                   onClick={() => onOpenChange(false)}
                   variant="outline"
                 >
                   {COURSE_DETAIL_COPY.cta.enrolled.review}
-                </Button>
+                </Button> */}
               </div>
             </div>
           ) : (

@@ -1,13 +1,16 @@
-'use client';
+"use client";
 
 import React from "react";
 
-import { applyEnrollmentToChapters, getOrderedContents } from "./content-utils";
+import {
+  applyEnrollmentToChapters,
+  getOrderedContents,
+} from "../utils/content-utils";
 import type {
   CourseChapter,
   CourseContentData,
   CourseContentItem,
-} from "./types";
+} from "../types";
 import type { Doc } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { convexQuery } from "@convex-dev/react-query";

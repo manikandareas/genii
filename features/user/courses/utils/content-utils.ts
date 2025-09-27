@@ -4,7 +4,7 @@ import type {
   CourseChapter,
   CourseContentItem,
   CourseContentItemStatus,
-} from "./types";
+} from "../types";
 
 type EnrollmentDoc = Doc<"course_enrollments"> | null;
 
@@ -41,7 +41,9 @@ export function normalisePlateValue(content: unknown): PlateValue {
   return [];
 }
 
-export function getOrderedContents(chapters: CourseChapter[]): CourseContentItem[] {
+export function getOrderedContents(
+  chapters: CourseChapter[],
+): CourseContentItem[] {
   return chapters
     .flatMap((chapter) => chapter.contents)
     .slice()
@@ -83,7 +85,10 @@ export function applyEnrollmentToChapters(
   if (!assignedActive && orderedContents.length > 0) {
     orderedContents.forEach((item) => {
       const contentId = String(item.doc._id);
-      if (!statusMap.has(contentId) || statusMap.get(contentId) !== "completed") {
+      if (
+        !statusMap.has(contentId) ||
+        statusMap.get(contentId) !== "completed"
+      ) {
         statusMap.set(contentId, "completed");
       }
     });
@@ -94,7 +99,8 @@ export function applyEnrollmentToChapters(
     contents: chapter.contents
       .map((content) => ({
         ...content,
-        status: statusMap.get(String(content.doc._id)) ?? content.status ?? "locked",
+        status:
+          statusMap.get(String(content.doc._id)) ?? content.status ?? "locked",
       }))
       .sort((a, b) => a.order - b.order),
   }));
