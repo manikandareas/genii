@@ -1,5 +1,5 @@
-import { Footer2 } from "@/features/landing/components/footer-section";
-import { Navbar } from "@/features/landing/components/navbar";
+import { AppFooter } from "@/features/landing/components/footer-section";
+import { AppNavbar } from "@/features/landing/components/navbar";
 import type React from "react";
 
 export default function UserLayout({
@@ -9,9 +9,9 @@ export default function UserLayout({
 }) {
   return (
     <div className="relative min-h-screen bg-background">
-      <Navbar />
+      <AppNavbar />
       {children}
-      <Footer2 />
+      <AppFooter />
     </div>
   );
 }

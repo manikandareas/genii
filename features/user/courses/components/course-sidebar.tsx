@@ -1,10 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { CheckCircle2, Circle, CircleDot, Search } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Circle,
+  CircleDot,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCourseContent } from "../course-content-context";
+import { useCourseContent } from "../contexts/course-content-context";
+import { Button } from "@/features/shared/components/ui/button";
 
 const statusIcon = (status: string) => {
   switch (status) {
@@ -26,15 +33,22 @@ export default function CourseSidebar() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--sidebar-primary)/0.15),transparent_55%)]" />
       <div className="absolute inset-0 bg-gradient-to-b from-sidebar-accent/5 via-transparent to-sidebar-accent/5" />
       <div className="relative flex h-full flex-col gap-8 pb-8 pt-8">
-        <div className="mx-6 relative flex items-center gap-3 rounded-full border border-sidebar-border bg-sidebar-accent px-4 py-2 text-sm text-sidebar-foreground shadow-inner focus-within:border-sidebar-border/60">
-          <Search className="h-4 w-4 text-sidebar-foreground/60" />
-          <input
-            placeholder="Cari pelajaran"
-            className="w-full bg-transparent text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/60 focus:outline-none"
-          />
-          <span className="text-[11px] font-mono uppercase tracking-wide text-sidebar-foreground/50">
-            ⌘K
-          </span>
+        <div className="flex items-center gap-1.5 mx-6">
+          <Link href={`/courses/${course.slug}`}>
+            <Button variant="ghost" size={"icon"}>
+              <ChevronLeft />
+            </Button>
+          </Link>
+          <div className="relative flex items-center gap-3 rounded-full border border-sidebar-border bg-sidebar-accent px-4 py-2 text-sm text-sidebar-foreground shadow-inner focus-within:border-sidebar-border/60">
+            <Search className="h-4 w-4 text-sidebar-foreground/60" />
+            <input
+              placeholder="Cari pelajaran"
+              className="w-full bg-transparent text-sm text-sidebar-foreground placeholder:text-sidebar-foreground/60 focus:outline-none"
+            />
+            <span className="text-[11px] font-mono uppercase tracking-wide text-sidebar-foreground/50">
+              ⌘K
+            </span>
+          </div>
         </div>
 
         <div className="px-6 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-sidebar-border/50 hover:scrollbar-thumb-sidebar-border">
@@ -49,7 +63,7 @@ export default function CourseSidebar() {
                 </div>
                 <div className="space-y-1">
                   {chapter.contents.map((item) => {
-                    const href = `/c/${course.slug}/${item.type === "lesson" ? "l" : "q"}/${item.doc.slug}`;
+                    const href = `/courses/${course.slug}/${item.type === "lesson" ? "l" : "q"}/${item.doc.slug}`;
                     const isActive = pathname === href;
 
                     return (
@@ -64,11 +78,12 @@ export default function CourseSidebar() {
                         )}
                       >
                         <div className="mt-0.5">
-                          {isActive ? (
+                          {/* {isActive ? (
                             <CircleDot className="h-4 w-4 text-highlight" />
                           ) : (
                             statusIcon(item.status)
-                          )}
+                          )} */}
+                          {statusIcon(item.status)}
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between gap-3">

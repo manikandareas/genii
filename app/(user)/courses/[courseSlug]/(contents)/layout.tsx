@@ -6,15 +6,15 @@ import { notFound } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
 
-import CourseSidebar from "./components/course-sidebar";
-import { CourseContentProvider } from "./course-content-context";
 import type {
   CourseChapter,
   CourseContentData,
   CourseContentItem,
   LessonDoc,
   QuizDoc,
-} from "./types";
+} from "@/features/user/courses/types";
+import { CourseContentProvider } from "@/features/user/courses/contexts/course-content-context";
+import CourseSidebar from "@/features/user/courses/components/course-sidebar";
 
 type CourseContentQueryResult = {
   course: Doc<"courses">;
@@ -41,8 +41,7 @@ function createLessonContentItem(
     estimatedDurationMinutes?: number;
   };
 
-  const summary =
-    meta.summary ?? "Konten lesson akan segera tersedia.";
+  const summary = meta.summary ?? "Konten lesson akan segera tersedia.";
   const estimatedDuration = Math.max(2, meta.estimatedDurationMinutes ?? 5);
 
   return {
@@ -79,7 +78,9 @@ function createQuizContentItem(
   };
 }
 
-function buildCourseContentData(input: CourseContentQueryResult): CourseContentData {
+function buildCourseContentData(
+  input: CourseContentQueryResult,
+): CourseContentData {
   let orderCounter = 0;
 
   const chaptersWithContent: CourseChapter[] = input.chapters.map((chapter) => {
@@ -178,7 +179,9 @@ export default async function ContentLayout({
           <CourseSidebar />
           <main className="relative flex-1 overflow-hidden lg:ml-[320px]">
             <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,hsl(var(--muted)/0.15),transparent_65%)] px-6 py-10 md:px-12">
-              <div className="mx-auto w-full max-w-5xl space-y-8">{children}</div>
+              <div className="mx-auto w-full max-w-5xl space-y-8">
+                {children}
+              </div>
             </div>
           </main>
         </div>

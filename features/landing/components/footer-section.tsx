@@ -1,3 +1,5 @@
+"use client";
+import { withPathname } from "@/lib/with-pathname";
 import { SignUpButton } from "@clerk/nextjs";
 import { Pyramid } from "lucide-react";
 import Link from "next/link";
@@ -127,4 +129,7 @@ const Footer2 = ({
   );
 };
 
-export { Footer2 };
+export const AppFooter = withPathname(Footer2, {
+  include: ["/", "/courses*"],
+  exclude: [/^\/courses\/[^/]+\/(l|q)\/[^/]+$/],
+});

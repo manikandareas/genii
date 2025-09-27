@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  ArrowLeft,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Maximize,
   TerminalSquare,
 } from "lucide-react";
 import Link from "next/link";
@@ -21,10 +19,9 @@ import { queryClient } from "@/contexts/convex-client-provider";
 import { LessonContentRenderer } from "@/features/user/courses/components/lesson-content-renderer";
 import { Button } from "@/features/shared/components/ui/button";
 import { cn } from "@/lib/utils";
-
-import { normalisePlateValue } from "../../content-utils";
-import { useCourseContent } from "../../course-content-context";
-import type { CourseContentItem } from "../../types";
+import { CourseContentItem } from "../types";
+import { useCourseContent } from "../contexts/course-content-context";
+import { normalisePlateValue } from "../utils/content-utils";
 
 interface LessonContentProps {
   lessonSlug: string;
@@ -36,7 +33,7 @@ function resolveTypeLabel(item: CourseContentItem | undefined) {
 }
 
 function buildHref(courseSlug: string, item: CourseContentItem) {
-  return `/c/${courseSlug}/${item.type === "lesson" ? "l" : "q"}/${item.doc.slug}`;
+  return `/courses/${courseSlug}/${item.type === "lesson" ? "l" : "q"}/${item.doc.slug}`;
 }
 
 export default function LessonContent({ lessonSlug }: LessonContentProps) {
@@ -177,11 +174,6 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
     <div className="">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3">
-          <Link href={`/courses/${course.slug}`}>
-            <Button size="icon" variant="ghost" title="Kembali ke kursus">
-              <ArrowLeft className="text-muted-foreground" />
-            </Button>
-          </Link>
           <div className="space-y-1">
             <p className="text-lg font-semibold text-foreground">
               {currentItem.doc.title}
@@ -201,15 +193,12 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
             variant="ghost"
             title="Buka artifact"
           >
-            <TerminalSquare />
-          </Button>
-          <Button size="icon" variant="ghost" title="Perbesar tampilan">
-            <Maximize className="text-muted-foreground" />
+            <TerminalSquare /> Artifacts
           </Button>
         </div>
       </header>
 
-      <section className="px-12">
+      <section className="pb-32">
         {hasContent ? (
           <LessonContentRenderer
             content={lessonValue}
@@ -223,19 +212,17 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         )}
       </section>
 
-      <footer className="flex flex-col gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] md:flex-row md:items-center md:justify-between">
-        <button
+      <div className="py-32 space-y-4 border-t border-border">
+        <h3 className="text-2xl font-semibold text-foreground">
+          Kamu Menyelesaikan Pelajaran Ini
+        </h3>
+        <p className="text-base text-muted-foreground">
+          Simpan perjalanan belajar kamu dengan tombol berikut:
+        </p>
+        <Button
           type="button"
           disabled={!isEnrolled || isCompleted || isUpdating}
           onClick={handleMarkCompletion}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70",
-            !isEnrolled
-              ? "border border-border bg-muted text-muted-foreground"
-              : isCompleted
-                ? "bg-emerald-400 text-emerald-950"
-                : "border border-border bg-muted text-foreground hover:border-border/60 hover:bg-muted/80",
-          )}
         >
           {isUpdating ? (
             <Loader2 className="h-4 w-4 animate-spin text-highlight" />
@@ -248,43 +235,43 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
             />
           )}
           {markCompleteLabel}
-        </button>
+        </Button>
+      </div>
 
-        <div className="flex flex-1 flex-wrap items-center justify-end gap-3">
-          {previousItem && (
-            <Link
-              href={buildHref(course.slug, previousItem)}
-              className="group flex min-w-[180px] items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground transition hover:border-border/60 hover:bg-muted hover:text-foreground"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              <div className="flex flex-col text-left">
-                <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  {resolveTypeLabel(previousItem)} Sebelumnya
-                </span>
-                <span className="text-sm font-semibold text-inherit">
-                  {previousItem.doc.title}
-                </span>
-              </div>
-            </Link>
-          )}
+      <footer className="flex flex-col gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] md:flex-row md:items-center md:justify-between">
+        {previousItem && (
+          <Link
+            href={buildHref(course.slug, previousItem)}
+            className="group flex min-w-[180px] items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground transition hover:border-border/60 hover:bg-muted hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <div className="flex flex-col text-left">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {resolveTypeLabel(previousItem)} Sebelumnya
+              </span>
+              <span className="text-sm font-semibold text-inherit">
+                {previousItem.doc.title}
+              </span>
+            </div>
+          </Link>
+        )}
 
-          {nextItem && (
-            <Link
-              href={buildHref(course.slug, nextItem)}
-              className="group flex min-w-[200px] items-center gap-2 rounded-full border border-highlight/40 bg-highlight/20 px-4 py-2 text-highlight transition hover:border-highlight/60 hover:bg-highlight/30"
-            >
-              <div className="flex flex-col text-left">
-                <span className="text-[11px] uppercase tracking-wide text-highlight/70">
-                  {resolveTypeLabel(nextItem)} Berikutnya
-                </span>
-                <span className="text-sm font-semibold text-highlight">
-                  {nextItem.doc.title}
-                </span>
-              </div>
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          )}
-        </div>
+        {nextItem && (
+          <Link
+            href={buildHref(course.slug, nextItem)}
+            className="group flex min-w-[200px] items-center gap-2 rounded-full border border-highlight/40 bg-highlight/20 px-4 py-2 text-highlight transition hover:border-highlight/60 hover:bg-highlight/30"
+          >
+            <div className="flex flex-col text-left">
+              <span className="text-[11px] uppercase tracking-wide text-highlight/70">
+                {resolveTypeLabel(nextItem)} Berikutnya
+              </span>
+              <span className="text-sm font-semibold text-highlight">
+                {nextItem.doc.title}
+              </span>
+            </div>
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        )}
       </footer>
     </div>
   );

@@ -15,6 +15,7 @@ import {
   NavbarLogo,
   NavItems,
 } from "@/features/shared/components/ui/resizable-navbar";
+import { withPathname } from "@/lib/with-pathname";
 
 export function Navbar() {
   const navItems = [
@@ -201,3 +202,8 @@ export function Navbar() {
     </NavbarComp>
   );
 }
+
+export const AppNavbar = withPathname(Navbar, {
+  include: ["/", "/courses*"],
+  exclude: [/^\/courses\/[^/]+\/(l|q)\/[^/]+$/],
+});
