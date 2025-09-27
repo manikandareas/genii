@@ -538,7 +538,9 @@ export function CourseForm({ courseId, initialData }: CourseFormProps) {
         values.thumbnailAssetRef !== "__no_thumbnail"
           ? {
               assetRef: values.thumbnailAssetRef as Id<"_storage">,
-              url: values.thumbnailUrl || undefined,
+              url: assetsList.find(
+                (asset) => asset.storageId === values.thumbnailAssetRef,
+              )?.url,
             }
           : undefined,
       trailerUrl: values.trailerUrl ? values.trailerUrl : undefined,
