@@ -58,7 +58,7 @@ export default function QuizContent({ quizSlug }: QuizContentProps) {
   if (!currentItem || currentItem.type !== "quiz") {
     return (
       <div className="rounded-3xl border border-border bg-card p-10 text-center text-muted-foreground">
-        Quiz tidak ditemukan di data dummy. Pastikan slug sesuai dengan struktur mock data.
+        Quiz tidak ditemukan. Pastikan Anda mengakses slug quiz yang valid.
       </div>
     );
   }

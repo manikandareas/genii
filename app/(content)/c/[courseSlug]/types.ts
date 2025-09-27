@@ -1,4 +1,4 @@
-import type { Doc } from "convex/_generated/dataModel";
+import type { Doc } from "@/convex/_generated/dataModel";
 
 export type LessonDoc = Doc<"lessons">;
 export type QuizDoc = Doc<"quizzes">;
@@ -41,4 +41,5 @@ export type CourseContentData = {
     totalQuizzes: number;
   };
   chapters: CourseChapter[];
+  enrollment: Doc<"course_enrollments"> | null;
 };
