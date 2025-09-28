@@ -27,7 +27,6 @@ import {
 import CourseSidebar from "@/features/user/courses/components/course-sidebar";
 import { LessonContentRenderer } from "@/features/user/courses/components/lesson-content-renderer";
 import { cn } from "@/lib/utils";
-import { SectionAwareAsk } from "../../agent/components/section-aware-ask";
 import { useSectionAsk } from "../../agent/context/ask-context";
 import { useCourseContent } from "../contexts/course-content-context";
 import { CourseContentItem } from "../types";
@@ -183,12 +182,14 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         </div>
         <div className="items-center gap-3 hidden md:flex">
           <Button
-            className="text-muted-foreground"
+            className={cn("text-muted-foreground", {
+              "text-accent-foreground bg-accent/50": isDialogOpen,
+            })}
             variant="ghost"
             title="Buka artifact"
             onClick={() => setDialogOpen(!isDialogOpen)}
           >
-            <TerminalSquare /> Artifacts
+            <TerminalSquare /> {isDialogOpen ? "Tutup Artifacts" : "Artifacts"}
           </Button>
         </div>
       </header>
@@ -274,8 +275,6 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
           </Link>
         )}
       </footer>
-
-      <SectionAwareAsk lessonId={currentItem.doc._id} />
 
       <Drawer open={isSidebarOpen} onOpenChange={setSidebarOpen}>
         <DrawerTrigger asChild>

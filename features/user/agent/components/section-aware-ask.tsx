@@ -3,15 +3,19 @@ import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AskContextChip } from "@/features/user/agent/components/context-chip";
 import { FloatingBar } from "@/features/user/agent/components/floating-input";
-import { AIResponseDialog } from "@/features/user/agent/components/ai-response-dialog";
 import { useSectionAsk } from "@/features/user/agent/context/ask-context";
 import { useCreateThread } from "@/features/user/agent/hooks/use-create-thread";
+import { cn } from "@/lib/utils";
+import { useCourseContent } from "../../courses/contexts/course-content-context";
 
-interface SectionAwareAskProps {
-  lessonId: string;
-}
+type SectionAwareAskProps = {
+  lessonSlug: string;
+};
 
-export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
+export function SectionAwareAsk({ lessonSlug }: SectionAwareAskProps) {
+  const { getContentBySlug } = useCourseContent();
+
+  const currentItem = getContentBySlug(lessonSlug);
   const {
     context,
     clearContext,
@@ -30,8 +34,8 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
 
   const lessonThreads = useMemo(() => {
     if (!userRooms) return;
-    return userRooms.filter((room) => room.lessonId === lessonId);
-  }, [lessonId, userRooms]);
+    return userRooms.filter((room) => room.lessonId === currentItem?.doc._id);
+  }, [userRooms, currentItem]);
 
   useEffect(() => {
     if (!lessonThreads) return;
@@ -61,7 +65,7 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
       if (!prompt) return;
       console.log({
         prompt,
-        lessonId,
+        lessonId: currentItem?.doc._id as string,
         sectionKey: context?.sectionKey,
         contextTitle: context?.title,
         sectionContent: context?.content,
@@ -69,7 +73,7 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
       try {
         const threadId = await createThread({
           prompt,
-          lessonId,
+          lessonId: currentItem?.doc._id as string,
           sectionKey: context?.sectionKey,
           contextTitle: context?.title,
           sectionContent: context?.content,
@@ -89,7 +93,7 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
       context?.title,
       context?.content,
       createThread,
-      lessonId,
+      currentItem?.doc._id,
       setDialogOpen,
       clearHistorySelection,
     ],
@@ -143,16 +147,23 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
           onSubmit={handleSubmit}
         />
       )}
-      {/* <AIResponseDialog
-        contextTitle={dialogContextTitle ?? undefined}
-        isCreatingThread={isCreatingThread}
-        isThreadsLoading={lessonThreads === undefined}
-        onOpenChange={handleDialogChange}
-        onThreadSelect={handleThreadSelect}
-        open={isDialogOpen}
-        threadId={activeThreadId}
-        threads={lessonThreads}
-      /> */}
+      {/* Artifacts Panel with slide animation */}
+      <div
+        className={cn(
+          "w-full max-w-3xl h-screen border fixed top-0 right-0 bottom-0 z-50 bg-card transition-transform duration-300 ease-in-out",
+          isDialogOpen ? "translate-x-0" : "translate-x-full",
+        )}
+      >
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Artifacts</h2>
+          <p className="text-muted-foreground">
+            Artifacts panel content will go here.
+          </p>
+        </div>
+      </div>
+
+      {/* Spacer for main content when artifacts panel is open */}
+      {isDialogOpen && <div className="max-w-3xl w-full" />}
     </>
   );
 }
