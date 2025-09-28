@@ -19,6 +19,8 @@ import type {
   QuizDoc,
 } from "@/features/user/courses/types";
 import { cn } from "@/lib/utils";
+import { useParams } from "next/navigation";
+import { SectionAwareAsk } from "@/features/user/agent/components/section-aware-ask";
 
 interface ContentLayoutClientProps {
   courseSlug: string;
@@ -154,6 +156,7 @@ export default function ContentLayoutClient({
   children,
 }: ContentLayoutClientProps) {
   const { isDialogOpen } = useSectionAsk();
+  const { lessonSlug } = useParams();
   const {
     data: courseDataRaw,
     isLoading,
@@ -238,23 +241,7 @@ export default function ContentLayoutClient({
             </div>
           </main>
 
-          {/* Artifacts Panel with slide animation */}
-          <div
-            className={cn(
-              "w-full max-w-3xl h-screen border fixed top-0 right-0 bottom-0 z-50 bg-card transition-transform duration-300 ease-in-out",
-              isDialogOpen ? "translate-x-0" : "translate-x-full",
-            )}
-          >
-            <div className="p-6">
-              <h2 className="text-lg font-semibold mb-4">Artifacts</h2>
-              <p className="text-muted-foreground">
-                Artifacts panel content will go here.
-              </p>
-            </div>
-          </div>
-
-          {/* Spacer for main content when artifacts panel is open */}
-          {isDialogOpen && <div className="max-w-3xl w-full" />}
+          {lessonSlug && <SectionAwareAsk lessonSlug={lessonSlug as string} />}
         </div>
       </div>
     </CourseContentProvider>
