@@ -1,4 +1,4 @@
-import type { FC, ReactNode } from "react";
+import type { FC, ReactNode, HTMLAttributes } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -14,7 +14,7 @@ type MarkdownComponentProps = {
   inline?: boolean;
   className?: string;
   children?: ReactNode;
-} & Record<string, unknown>;
+} & HTMLAttributes<HTMLElement>;
 
 interface MarkdownRendererProps {
   content: string;
@@ -134,7 +134,8 @@ export const MarkdownRenderer: FC<MarkdownRendererProps> = ({
                       color: "var(--muted-foreground)",
                     }}
                     showLineNumbers
-                    style={dark}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    style={dark as any}
                     wrapLines
                     {...props}
                   >
