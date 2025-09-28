@@ -28,6 +28,7 @@ import CourseSidebar from "@/features/user/courses/components/course-sidebar";
 import { LessonContentRenderer } from "@/features/user/courses/components/lesson-content-renderer";
 import { cn } from "@/lib/utils";
 import { SectionAwareAsk } from "../../agent/components/section-aware-ask";
+import { useSectionAsk } from "../../agent/context/ask-context";
 import { useCourseContent } from "../contexts/course-content-context";
 import { CourseContentItem } from "../types";
 import { normalisePlateValue } from "../utils/content-utils";
@@ -54,6 +55,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
     updateEnrollment,
   } = useCourseContent();
 
+  const { isDialogOpen, setDialogOpen } = useSectionAsk();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const currentItem = getContentBySlug(lessonSlug);
@@ -182,9 +184,9 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         <div className="items-center gap-3 hidden md:flex">
           <Button
             className="text-muted-foreground"
-            size="icon"
             variant="ghost"
             title="Buka artifact"
+            onClick={() => setDialogOpen(!isDialogOpen)}
           >
             <TerminalSquare /> Artifacts
           </Button>
@@ -282,7 +284,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
             size="sm"
             variant="default"
             aria-label="Buka daftar pelajaran"
-            className="fixed bottom-6 right-6 z-50 md:hidden"
+            className="fixed bottom-20 right-6 z-50 md:hidden"
           >
             <PanelLeft className="h-5 w-5" />
 

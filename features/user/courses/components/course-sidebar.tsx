@@ -18,7 +18,7 @@ const statusIcon = (status: string) => {
 };
 
 interface CourseSidebarProps {
-  variant?: "default" | "drawer";
+  variant?: "default" | "drawer" | "animated";
   className?: string;
 }
 
@@ -33,6 +33,8 @@ export default function CourseSidebar({
     "relative flex flex-col bg-sidebar text-sidebar-foreground",
     variant === "default"
       ? "fixed left-0 top-0 z-50 hidden h-screen w-[320px] border-r border-sidebar-border shadow-[0_0_40px_hsl(var(--muted)/0.35)] lg:flex"
+      : variant === "animated"
+      ? "h-full w-full border-r border-sidebar-border shadow-[0_0_40px_hsl(var(--muted)/0.35)]"
       : "h-full w-full overflow-hidden shadow-none",
     className,
   );

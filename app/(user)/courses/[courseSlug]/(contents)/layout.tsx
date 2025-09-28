@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import ContentLayoutClient from "./content-layout-client";
+import { SectionAskProvider } from "@/features/user/agent/context/ask-context";
 
 interface ContentLayoutProps {
   children: ReactNode;
@@ -16,8 +17,10 @@ export default async function ContentLayout({
   const paramsData = await params;
 
   return (
-    <ContentLayoutClient courseSlug={paramsData.courseSlug}>
-      {children}
-    </ContentLayoutClient>
+    <SectionAskProvider>
+      <ContentLayoutClient courseSlug={paramsData.courseSlug}>
+        {children}
+      </ContentLayoutClient>
+    </SectionAskProvider>
   );
 }
