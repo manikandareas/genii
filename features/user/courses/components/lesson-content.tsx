@@ -27,6 +27,7 @@ import {
 import CourseSidebar from "@/features/user/courses/components/course-sidebar";
 import { LessonContentRenderer } from "@/features/user/courses/components/lesson-content-renderer";
 import { cn } from "@/lib/utils";
+import { SectionAwareAsk } from "../../agent/components/section-aware-ask";
 import { useCourseContent } from "../contexts/course-content-context";
 import { CourseContentItem } from "../types";
 import { normalisePlateValue } from "../utils/content-utils";
@@ -164,7 +165,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
   }
 
   return (
-    <div className="">
+    <div className="relative">
       <header className="flex gap-4 items-center md:justify-between">
         <Link href={`/courses/${course.slug}`}>
           <Button variant="ghost" size={"icon"}>
@@ -271,6 +272,8 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
           </Link>
         )}
       </footer>
+
+      <SectionAwareAsk lessonId={currentItem.doc._id} />
 
       <Drawer open={isSidebarOpen} onOpenChange={setSidebarOpen}>
         <DrawerTrigger asChild>
