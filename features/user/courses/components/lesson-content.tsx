@@ -6,8 +6,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Library,
   Loader2,
-  PanelLeft,
   TerminalSquare,
 } from "lucide-react";
 import Link from "next/link";
@@ -285,12 +285,12 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
             aria-label="Buka daftar pelajaran"
             className="fixed bottom-20 right-6 z-50 md:hidden"
           >
-            <PanelLeft className="h-5 w-5" />
+            <Library className="h-5 w-5" />
 
-            <span>Daftar pelajaran</span>
+            <span>Kurikulum</span>
           </Button>
         </DrawerTrigger>
-        <DrawerTitle className="sr-only">Daftar Pelajaran</DrawerTitle>
+        <DrawerTitle className="sr-only">Kurikulum</DrawerTitle>
         <DrawerContent className="lg:hidden border-none bg-transparent shadow-none">
           <div className="mx-auto h-[75vh] w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-sidebar shadow-[0_15px_45px_hsl(var(--muted)/0.35)]">
             <CourseSidebar variant="drawer" className="h-full" />
