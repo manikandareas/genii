@@ -1,26 +1,34 @@
 "use client";
 
+import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Loader2,
+  PanelLeft,
   TerminalSquare,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useMemo } from "react";
-import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
-import { useMutation } from "@tanstack/react-query";
 import type { Value } from "platejs";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { api } from "@/convex/_generated/api";
 import { queryClient } from "@/contexts/convex-client-provider";
-import { LessonContentRenderer } from "@/features/user/courses/components/lesson-content-renderer";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/features/shared/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/features/shared/components/ui/drawer";
+import CourseSidebar from "@/features/user/courses/components/course-sidebar";
+import { LessonContentRenderer } from "@/features/user/courses/components/lesson-content-renderer";
 import { cn } from "@/lib/utils";
-import { CourseContentItem } from "../types";
 import { useCourseContent } from "../contexts/course-content-context";
+import { CourseContentItem } from "../types";
 import { normalisePlateValue } from "../utils/content-utils";
 
 interface LessonContentProps {
@@ -45,6 +53,8 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
     enrollment,
     updateEnrollment,
   } = useCourseContent();
+
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const currentItem = getContentBySlug(lessonSlug);
 
@@ -162,6 +172,10 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
       ? "Pelajaran telah diselesaikan"
       : "Tandai pelajaran selesai";
 
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [lessonSlug]);
+
   if (!currentItem || currentItem.type !== "lesson") {
     return (
       <div className="rounded-3xl border border-border bg-card p-10 text-center text-muted-foreground">
@@ -172,17 +186,16 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
 
   return (
     <div className="">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <header className="flex gap-4 items-center md:justify-between">
+        <Link href={`/courses/${course.slug}`}>
+          <Button variant="ghost" size={"icon"}>
+            <ChevronLeft />
+          </Button>
+        </Link>
         <div className="flex items-center gap-3">
           <div className="space-y-1">
-            <p className="text-lg font-semibold text-foreground">
+            <p className="text-lg font-semibold text-foreground text-wrap text-center">
               {currentItem.doc.title}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {lessonChapter?.chapter.title ?? "Pelajaran"}
-              {lessonPosition >= 0 && lessonCount > 0
-                ? ` • Modul ${lessonPosition + 1} dari ${lessonCount}`
-                : ""}
             </p>
           </div>
         </div>
@@ -279,6 +292,28 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
           </Link>
         )}
       </footer>
+
+      <Drawer open={isSidebarOpen} onOpenChange={setSidebarOpen}>
+        <DrawerTrigger asChild>
+          <Button
+            type="button"
+            size="sm"
+            variant="default"
+            aria-label="Buka daftar pelajaran"
+            className="fixed bottom-6 right-6 z-50 md:hidden"
+          >
+            <PanelLeft className="h-5 w-5" />
+
+            <span>Daftar pelajaran</span>
+          </Button>
+        </DrawerTrigger>
+        <DrawerTitle className="sr-only">Daftar Pelajaran</DrawerTitle>
+        <DrawerContent className="lg:hidden border-none bg-transparent shadow-none">
+          <div className="mx-auto h-[75vh] w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-sidebar shadow-[0_15px_45px_hsl(var(--muted)/0.35)]">
+            <CourseSidebar variant="drawer" className="h-full" />
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 }
