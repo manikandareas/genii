@@ -1,13 +1,20 @@
+"use client";
+
 import * as React from "react";
 
 import type { SlateElementProps } from "platejs";
 
 import { type VariantProps, cva } from "class-variance-authority";
 import { SlateElement, NodeApi } from "platejs";
-import { Hash } from "lucide-react";
+import { Hash, SendHorizontal } from "lucide-react";
+
+import { Button } from "@/features/shared/components/ui/button";
+import { useSectionAsk } from "@/features/user/agent/context/ask-context";
+import { useLessonSectionMetadata } from "@/features/user/agent/context/lesson-section-context";
+import { cn } from "@/lib/utils";
 
 // Utility function to generate slug from text
-function generateSlug(text: string): string {
+export function generateHeadingSlug(text: string): string {
   return text
     .toLowerCase()
     .replace(/[^\w\s-]/g, "") // Remove special characters
@@ -35,7 +42,59 @@ export function HeadingElementStatic({
 }: SlateElementProps & VariantProps<typeof headingVariants>) {
   // Get the text content of the heading
   const headingText = NodeApi.string(props.element);
-  const slug = generateSlug(headingText);
+  const slug = generateHeadingSlug(headingText);
+  const askContext = useSectionAsk();
+  const lessonSectionMetadata = useLessonSectionMetadata();
+
+  const lessonId = lessonSectionMetadata?.lessonId;
+
+  const maybeKey = (props.element as { _key?: string; id?: string } | undefined)
+    ?._key;
+  const maybeId = (props.element as { id?: string } | undefined)?.id;
+
+  const sectionKey = maybeKey ?? maybeId ?? slug;
+  const sectionMetadata =
+    lessonSectionMetadata?.sections?.[sectionKey] ??
+    (sectionKey !== slug ? lessonSectionMetadata?.sections?.[slug] : undefined);
+  const contextTitle = sectionMetadata?.title ?? headingText;
+  const contextContent = sectionMetadata?.content;
+
+  const isActive =
+    askContext.context?.lessonId === lessonId &&
+    askContext.context?.sectionKey === sectionKey;
+  const hasHistory = askContext.hasHistory(sectionKey);
+
+  const handleHeadingAsk = React.useCallback(() => {
+    if (!lessonId) return;
+
+    askContext.setContext({
+      lessonId,
+      sectionKey,
+      title: contextTitle,
+      content: contextContent,
+    });
+  }, [askContext, lessonId, sectionKey, contextTitle, contextContent]);
+
+  const handleHistoryOpen = React.useCallback(() => {
+    if (!lessonId || !hasHistory) return;
+
+    askContext.openHistory({
+      lessonId,
+      sectionKey,
+      title: contextTitle,
+    });
+  }, [askContext, contextTitle, hasHistory, lessonId, sectionKey]);
+
+  const handleHeadingKeyDown = (
+    event: React.KeyboardEvent<HTMLHeadingElement>,
+  ) => {
+    if (!hasHistory) return;
+
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleHistoryOpen();
+    }
+  };
 
   const handleAnchorClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,24 +107,75 @@ export function HeadingElementStatic({
     }
   };
 
+  const headingContent = hasHistory ? (
+    <span className="after:-z-10 relative inline-block px-1 after:absolute after:inset-x-0 after:bottom-1 after:h-2 after:rounded-sm after:bg-amber-200/70 after:transition-colors after:duration-200 after:content-[''] group-hover/h1:after:bg-amber-300/80 dark:after:bg-amber-500/30">
+      {props.children}
+    </span>
+  ) : (
+    props.children
+  );
+
   return (
-    <SlateElement
-      as={variant!}
-      className={headingVariants({ variant })}
-      {...props}
-      attributes={{ id: slug, ...props.attributes }}
-    >
-      <span className="flex items-center">
-        {props.children}
-        <button
-          onClick={handleAnchorClick}
-          className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-muted-foreground hover:text-foreground"
-          aria-label={`Link to ${headingText}`}
+    <div className="group/h1 relative">
+      {!hasHistory && (
+        <Button
+          aria-pressed={isActive}
+          className={cn(
+            "-left-12 absolute top-0 transition-colors group-hover/h1:opacity-100",
+            isActive ? "opacity-100" : "opacity-0",
+            isActive
+              ? "text-primary group-hover/h1:text-primary"
+              : "text-muted-foreground hover:text-primary group-hover/h1:text-primary",
+          )}
+          disabled={!lessonId}
+          onClick={handleHeadingAsk}
+          size="icon"
+          type="button"
+          variant="ghost"
         >
-          <Hash />
-        </button>
-      </span>
-    </SlateElement>
+          <SendHorizontal
+            className={cn(
+              "transition-all ease-in-out rotate-90 group-hover/h1:rotate-0 delay-200",
+              isActive ? "text-primary" : undefined,
+            )}
+            size={16}
+          />
+        </Button>
+      )}
+      <SlateElement
+        as={variant!}
+        className={cn(
+          headingVariants({ variant }),
+          "group scroll-mt-24",
+          hasHistory &&
+            "hover:-translate-y-0.5 w-fit cursor-pointer rounded-md transition-transform duration-200 focus-visible:outline-2 focus-visible:outline-amber-400 focus-visible:outline-offset-2 dark:focus-visible:outline-amber-300",
+        )}
+        {...props}
+        attributes={{
+          id: slug,
+          onClick: () => (hasHistory ? handleHistoryOpen() : undefined),
+          onKeyDown: handleHeadingKeyDown,
+          tabIndex: hasHistory ? 0 : undefined,
+          ...props.attributes,
+        }}
+      >
+        <span className="flex items-center">
+          {headingContent}
+          <button
+            onClick={handleAnchorClick}
+            className={cn(
+              "ml-2 opacity-0 transition-opacity duration-200 text-muted-foreground hover:text-foreground group-hover:opacity-100",
+              hasHistory &&
+                "text-amber-400 hover:text-amber-500 dark:text-amber-300 dark:hover:text-amber-200",
+            )}
+            aria-label={`Link to ${headingText}`}
+            type="button"
+          >
+            <Hash />
+          </button>
+        </span>
+      </SlateElement>
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@ import { useQuery } from "convex/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AskContextChip } from "@/features/user/agent/components/context-chip";
 import { FloatingBar } from "@/features/user/agent/components/floating-input";
+import { ArtifactsPanel } from "@/features/user/agent/components/artifacts-panel";
 import { useSectionAsk } from "@/features/user/agent/context/ask-context";
 import { useCreateThread } from "@/features/user/agent/hooks/use-create-thread";
 import { cn } from "@/lib/utils";
@@ -63,13 +64,6 @@ export function SectionAwareAsk({ lessonSlug }: SectionAwareAskProps) {
     async (rawValue: string) => {
       const prompt = rawValue.trim();
       if (!prompt) return;
-      console.log({
-        prompt,
-        lessonId: currentItem?.doc._id as string,
-        sectionKey: context?.sectionKey,
-        contextTitle: context?.title,
-        sectionContent: context?.content,
-      });
       try {
         const threadId = await createThread({
           prompt,
@@ -104,9 +98,10 @@ export function SectionAwareAsk({ lessonSlug }: SectionAwareAskProps) {
       setDialogOpen(open);
       if (!open) {
         setActiveThreadId(null);
+        clearHistorySelection();
       }
     },
-    [setDialogOpen],
+    [setDialogOpen, clearHistorySelection],
   );
 
   const handleThreadSelect = useCallback(
@@ -131,6 +126,8 @@ export function SectionAwareAsk({ lessonSlug }: SectionAwareAskProps) {
     return context?.title;
   }, [activeThreadId, context?.title, historySelection?.title, lessonThreads]);
 
+  const threadsLoading = userRooms === undefined;
+
   return (
     <>
       {!isDialogOpen && (
@@ -150,16 +147,20 @@ export function SectionAwareAsk({ lessonSlug }: SectionAwareAskProps) {
       {/* Artifacts Panel with slide animation */}
       <div
         className={cn(
-          "w-full max-w-3xl h-screen border fixed top-0 right-0 bottom-0 z-50 bg-card transition-transform duration-300 ease-in-out",
+          "w-full max-w-3xl h-screen fixed top-0 right-0 bottom-0 z-50 bg-card transition-transform duration-300 ease-in-out",
           isDialogOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="p-6">
-          <h2 className="text-lg font-semibold mb-4">Artifacts</h2>
-          <p className="text-muted-foreground">
-            Artifacts panel content will go here.
-          </p>
-        </div>
+        <ArtifactsPanel
+          contextTitle={dialogContextTitle}
+          isCreatingThread={isCreatingThread}
+          isThreadsLoading={threadsLoading}
+          onClose={() => handleDialogChange(false)}
+          onStartConversation={handleSubmit}
+          onThreadSelect={handleThreadSelect}
+          threadId={activeThreadId}
+          threads={lessonThreads ?? []}
+        />
       </div>
 
       {/* Spacer for main content when artifacts panel is open */}
