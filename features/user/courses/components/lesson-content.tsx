@@ -199,6 +199,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
           <LessonContentRenderer
             content={lessonValue}
             className="prose prose-invert max-w-none"
+            lessonId={currentItem.doc._id}
           />
         ) : (
           <p className="text-base leading-relaxed text-muted-foreground">

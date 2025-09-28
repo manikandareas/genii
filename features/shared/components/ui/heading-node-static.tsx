@@ -85,14 +85,23 @@ export function HeadingElementStatic({
     });
   }, [askContext, contextTitle, hasHistory, lessonId, sectionKey]);
 
+  const handleHeadingActivate = React.useCallback(() => {
+    if (!lessonId) return;
+
+    if (hasHistory) {
+      handleHistoryOpen();
+      return;
+    }
+
+    handleHeadingAsk();
+  }, [handleHeadingAsk, handleHistoryOpen, hasHistory, lessonId]);
+
   const handleHeadingKeyDown = (
     event: React.KeyboardEvent<HTMLHeadingElement>,
   ) => {
-    if (!hasHistory) return;
-
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleHistoryOpen();
+      handleHeadingActivate();
     }
   };
 
@@ -121,8 +130,10 @@ export function HeadingElementStatic({
         <Button
           aria-pressed={isActive}
           className={cn(
-            "-left-12 absolute top-0 transition-colors group-hover/h1:opacity-100",
-            isActive ? "opacity-100" : "opacity-0",
+            "-left-12 absolute top-0 transition-colors opacity-0",
+            isActive
+              ? "opacity-100"
+              : "opacity-0 group-hover/h1:opacity-100 group-focus-within/h1:opacity-100",
             isActive
               ? "text-primary group-hover/h1:text-primary"
               : "text-muted-foreground hover:text-primary group-hover/h1:text-primary",
@@ -146,16 +157,17 @@ export function HeadingElementStatic({
         as={variant!}
         className={cn(
           headingVariants({ variant }),
-          "group scroll-mt-24",
+          "group scroll-mt-24 cursor-pointer",
           hasHistory &&
             "hover:-translate-y-0.5 w-fit cursor-pointer rounded-md transition-transform duration-200 focus-visible:outline-2 focus-visible:outline-amber-400 focus-visible:outline-offset-2 dark:focus-visible:outline-amber-300",
         )}
         {...props}
         attributes={{
           id: slug,
-          onClick: () => (hasHistory ? handleHistoryOpen() : undefined),
+          onClick: handleHeadingActivate,
           onKeyDown: handleHeadingKeyDown,
-          tabIndex: hasHistory ? 0 : undefined,
+          role: "button",
+          tabIndex: 0,
           ...props.attributes,
         }}
       >
