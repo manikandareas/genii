@@ -1,7 +1,7 @@
-import { v } from 'convex/values';
-import { api, internal } from '../_generated/api';
-import { mutation } from '../_generated/server';
-import { geniiAgent } from './genii';
+import { v } from "convex/values";
+import { api, internal } from "../_generated/api";
+import { mutation } from "../_generated/server";
+import { geniiAgent } from "./genii";
 
 export const createThread = mutation({
   args: {
@@ -15,13 +15,13 @@ export const createThread = mutation({
     const identity = await ctx.auth.getUserIdentity();
 
     if (!identity) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
     const { threadId } = await geniiAgent.createThread(ctx, {
       userId: identity.subject,
     });
 
-    await ctx.db.insert('chat_conversations', {
+    await ctx.db.insert("chat_conversations", {
       threadId,
       clerkId: identity.subject,
       lessonId: args.lessonId ?? undefined,
@@ -33,12 +33,16 @@ export const createThread = mutation({
       isArchived: false,
     });
 
-    ctx.runMutation(api.agents.mutations.streamChatAsynchronously, {
+    await ctx.runMutation(api.agents.mutations.streamChatAsynchronously, {
       prompt: args.prompt,
       threadId,
       sectionContext: args.sectionContent ?? undefined,
       contextTitle: args.contextTitle ?? undefined,
       isFirstMessage: true,
+    });
+
+    await ctx.scheduler.runAfter(0, internal.agents.actions.updateThreadTitle, {
+      threadId,
     });
 
     return threadId;
@@ -55,11 +59,11 @@ export const streamChatAsynchronously = mutation({
   },
   handler: async (
     ctx,
-    { prompt, threadId, sectionContext, contextTitle, isFirstMessage }
+    { prompt, threadId, sectionContext, contextTitle, isFirstMessage },
   ) => {
     const conversation = await ctx.db
-      .query('chat_conversations')
-      .withIndex('by_thread_id', (q) => q.eq('threadId', threadId))
+      .query("chat_conversations")
+      .withIndex("by_thread_id", (q) => q.eq("threadId", threadId))
       .unique();
 
     const trimmedSectionContext = sectionContext?.trim();
@@ -81,7 +85,7 @@ export const streamChatAsynchronously = mutation({
 
     if (resolvedSectionContext && isFirstMessage) {
       const sectionPromptLines = [
-        'Gunakan konteks materi berikut untuk menjawab pertanyaan pengguna secara akurat. Jika jawaban tidak ada dalam konteks ini, jelaskan bahwa informasi tidak tersedia dan sarankan langkah berikutnya.',
+        "Gunakan konteks materi berikut untuk menjawab pertanyaan pengguna secara akurat. Jika jawaban tidak ada dalam konteks ini, jelaskan bahwa informasi tidak tersedia dan sarankan langkah berikutnya.",
         resolvedContextTitle ? `Judul bagian: ${resolvedContextTitle}` : null,
         resolvedSectionContext,
       ].filter((line): line is string => Boolean(line));
@@ -89,8 +93,8 @@ export const streamChatAsynchronously = mutation({
       const { messages } = await geniiAgent.saveMessages(ctx, {
         threadId,
         messages: [
-          { role: 'system', content: sectionPromptLines.join('\n\n') },
-          { role: 'user', content: prompt },
+          { role: "system", content: sectionPromptLines.join("\n\n") },
+          { role: "user", content: prompt },
         ],
         skipEmbeddings: true,
       });
@@ -119,20 +123,20 @@ export const remove = mutation({
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     const conversation = await ctx.db
-      .query('chat_conversations')
-      .withIndex('by_thread_id', (q) => q.eq('threadId', args.threadId))
+      .query("chat_conversations")
+      .withIndex("by_thread_id", (q) => q.eq("threadId", args.threadId))
       .unique();
 
     if (!conversation) {
-      throw new Error('Conversation not found');
+      throw new Error("Conversation not found");
     }
 
     if (conversation.clerkId !== identity.subject) {
-      throw new Error('User not authorized to delete this conversation');
+      throw new Error("User not authorized to delete this conversation");
     }
 
     await ctx.db.delete(conversation._id);

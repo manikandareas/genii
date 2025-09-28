@@ -1,25 +1,19 @@
 "use client";
 
-import { History, Loader2, SendHorizonal } from "lucide-react";
+import { Loader2, SendHorizonal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/features/shared/components/ui/button";
-import { cn } from "@/lib/utils";
-import { AskContextChip } from "@/features/user/agent/components/context-chip";
+import { Textarea } from "@/features/shared/components/ui/textarea";
 import { ChatInput } from "@/features/user/agent/components/chat-input";
-import {
-  ChatSidebar,
-  type ChatSidebarThread,
-} from "@/features/user/agent/components/chat-sidebar";
+import { type ChatSidebarThread } from "@/features/user/agent/components/chat-sidebar";
+import { AskContextChip } from "@/features/user/agent/components/context-chip";
 import { MessagesArea } from "@/features/user/agent/components/message-area";
 import { useSectionAsk } from "@/features/user/agent/context/ask-context";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/features/shared/components/ui/sheet";
-import { Textarea } from "@/features/shared/components/ui/textarea";
+import { convexQuery } from "@convex-dev/react-query";
+import { useQuery } from "@tanstack/react-query";
+import HistoryChatDialog from "./history-chat-dialog";
 
 interface ArtifactsPanelProps {
   threadId: string | null;
@@ -49,7 +43,15 @@ export function ArtifactsPanel({
     clearContext,
     historySelection,
   } = useSectionAsk();
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const threadDetails = useQuery(
+    convexQuery(
+      api.agents.queries.getThreadDetails,
+      threadId ? { threadId } : "skip",
+    ),
+  );
+
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [draftPrompt, setDraftPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,7 +65,7 @@ export function ArtifactsPanel({
     clearHistorySelection();
     onThreadSelect(selectedThreadId);
     setDialogOpen(true);
-    setIsMobileSidebarOpen(false);
+    setIsSidebarOpen(false);
   };
 
   const handleClose = () => {
@@ -89,44 +91,37 @@ export function ArtifactsPanel({
   };
 
   return (
-    <div className="flex h-full flex-col border-l border-border/70 bg-background/95">
+    <div className="flex h-full flex-col border-l border-border/70 bg-card">
       <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Button
-            aria-label="Buka riwayat percakapan"
-            className="md:hidden"
-            onClick={() => setIsMobileSidebarOpen(true)}
-            size="icon"
-            variant="ghost"
-          >
-            <History className="h-5 w-5" />
+          <Button variant="ghost" onClick={handleClose}>
+            <X />
           </Button>
-          <div className="flex flex-col gap-1">
-            <span className="text-sm font-semibold text-muted-foreground">
-              Artifacts
-            </span>
-            {activeContextTitle && (
-              <AskContextChip
-                className="w-fit bg-primary/5 text-xs"
-                onClear={clearContext}
-                title={activeContextTitle}
-              />
-            )}
-          </div>
+          <span className="md:text-base font-semibold text-muted-foreground truncate w-52 md:w-full text-sm">
+            {threadDetails?.data?.title || draftPrompt || "Artifacts"}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {activeContextTitle && (
+            <AskContextChip
+              className="w-fit bg-primary/5 text-xs"
+              onClear={clearContext}
+              title={activeContextTitle}
+            />
+          )}
+
+          <HistoryChatDialog
+            onSelectThread={handleThreadSelect}
+            threads={threads}
+            selectedThreadId={threadId}
+            isLoading={isThreadsLoading}
+            open={isSidebarOpen}
+            onOpenChange={setIsSidebarOpen}
+          />
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* <aside className="hidden h-full w-72 flex-shrink-0 border-r border-border/70 bg-background/90 md:flex">
-          <ChatSidebar
-            className="h-full"
-            isLoading={isThreadsLoading}
-            onSelectThread={handleThreadSelect}
-            selectedThreadId={threadId}
-            threads={threads}
-          />
-        </aside> */}
-
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 sm:px-6">
             {threadId ? (
@@ -189,28 +184,6 @@ export function ArtifactsPanel({
           </div>
         </div>
       </div>
-
-      <Sheet onOpenChange={setIsMobileSidebarOpen} open={isMobileSidebarOpen}>
-        <SheetContent
-          className={cn(
-            "w-full max-w-xs border-border/70 border-r bg-background/95 p-0",
-          )}
-          side="left"
-        >
-          <SheetHeader className="border-b border-border/70 px-4 py-3">
-            <SheetTitle className="text-left font-semibold text-base">
-              Riwayat Percakapan
-            </SheetTitle>
-          </SheetHeader>
-          <ChatSidebar
-            className="h-full"
-            isLoading={isThreadsLoading}
-            onSelectThread={handleThreadSelect}
-            selectedThreadId={threadId}
-            threads={threads}
-          />
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }

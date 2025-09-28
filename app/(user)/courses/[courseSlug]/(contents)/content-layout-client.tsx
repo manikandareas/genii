@@ -229,7 +229,7 @@ export default function ContentLayoutClient({
               isDialogOpen ? "lg:ml-0" : "lg:ml-[320px]",
             )}
           >
-            <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,hsl(var(--muted)/0.15),transparent_65%)] px-6 py-10 md:px-12">
+            <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,hsl(var(--muted)/0.15),transparent_65%)] px-6 py-6 md:px-12">
               <div
                 className={cn(
                   "mx-auto w-full space-y-8 transition-all duration-300 ease-in-out",
