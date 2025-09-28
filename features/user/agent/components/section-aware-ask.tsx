@@ -129,19 +129,21 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
 
   return (
     <>
-      <FloatingBar
-        leftSlot={
-          context ? (
-            <AskContextChip
-              key={context.sectionKey}
-              onClear={clearContext}
-              title={context.title ?? "Bagian terpilih"}
-            />
-          ) : null
-        }
-        onSubmit={handleSubmit}
-      />
-      <AIResponseDialog
+      {!isDialogOpen && (
+        <FloatingBar
+          leftSlot={
+            context ? (
+              <AskContextChip
+                key={context.sectionKey}
+                onClear={clearContext}
+                title={context.title ?? "Bagian terpilih"}
+              />
+            ) : null
+          }
+          onSubmit={handleSubmit}
+        />
+      )}
+      {/* <AIResponseDialog
         contextTitle={dialogContextTitle ?? undefined}
         isCreatingThread={isCreatingThread}
         isThreadsLoading={lessonThreads === undefined}
@@ -150,7 +152,7 @@ export function SectionAwareAsk({ lessonId }: SectionAwareAskProps) {
         open={isDialogOpen}
         threadId={activeThreadId}
         threads={lessonThreads}
-      />
+      /> */}
     </>
   );
 }

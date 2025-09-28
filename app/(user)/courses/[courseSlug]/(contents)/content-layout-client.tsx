@@ -1,15 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
-import type { ReactNode } from "react";
-import { Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import type { ReactNode } from "react";
+import { useMemo } from "react";
 
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { CourseContentProvider } from "@/features/user/courses/contexts/course-content-context";
+import { useSectionAsk } from "@/features/user/agent/context/ask-context";
 import CourseSidebar from "@/features/user/courses/components/course-sidebar";
+import { CourseContentProvider } from "@/features/user/courses/contexts/course-content-context";
 import type {
   CourseChapter,
   CourseContentData,
@@ -17,6 +18,7 @@ import type {
   LessonDoc,
   QuizDoc,
 } from "@/features/user/courses/types";
+import { cn } from "@/lib/utils";
 
 interface ContentLayoutClientProps {
   courseSlug: string;
@@ -151,6 +153,7 @@ export default function ContentLayoutClient({
   courseSlug,
   children,
 }: ContentLayoutClientProps) {
+  const { isDialogOpen } = useSectionAsk();
   const {
     data: courseDataRaw,
     isLoading,
@@ -206,14 +209,52 @@ export default function ContentLayoutClient({
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.15),transparent_55%),radial-gradient(circle_at_bottom_right,hsl(var(--accent)/0.2),transparent_50%)]" />
         <div className="absolute inset-x-20 top-[-20%] h-[480px] rounded-full bg-[radial-gradient(circle,hsl(var(--muted)/0.25),transparent_70%)] blur-3xl" />
         <div className="relative z-0 flex min-h-screen">
-          <CourseSidebar />
-          <main className="relative flex-1 overflow-hidden lg:ml-[320px]">
+          {/* Course Sidebar with slide animation */}
+          <div
+            className={cn(
+              "fixed left-0 top-0 z-50 h-screen w-[320px] transition-transform duration-300 ease-in-out hidden lg:block",
+              isDialogOpen ? "-translate-x-full" : "translate-x-0",
+            )}
+          >
+            <CourseSidebar variant="animated" />
+          </div>
+
+          {/* Main content area */}
+          <main
+            className={cn(
+              "relative flex-1 overflow-hidden transition-all duration-300 ease-in-out",
+              isDialogOpen ? "lg:ml-0" : "lg:ml-[320px]",
+            )}
+          >
             <div className="h-full overflow-y-auto bg-[radial-gradient(circle_at_top,hsl(var(--muted)/0.15),transparent_65%)] px-6 py-10 md:px-12">
-              <div className="mx-auto w-full max-w-5xl space-y-8">
+              <div
+                className={cn(
+                  "mx-auto w-full space-y-8 transition-all duration-300 ease-in-out",
+                  isDialogOpen ? "max-w-3xl" : "max-w-5xl",
+                )}
+              >
                 {children}
               </div>
             </div>
           </main>
+
+          {/* Artifacts Panel with slide animation */}
+          <div
+            className={cn(
+              "w-full max-w-3xl h-screen border fixed top-0 right-0 bottom-0 z-50 bg-card transition-transform duration-300 ease-in-out",
+              isDialogOpen ? "translate-x-0" : "translate-x-full",
+            )}
+          >
+            <div className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Artifacts</h2>
+              <p className="text-muted-foreground">
+                Artifacts panel content will go here.
+              </p>
+            </div>
+          </div>
+
+          {/* Spacer for main content when artifacts panel is open */}
+          {isDialogOpen && <div className="max-w-3xl w-full" />}
         </div>
       </div>
     </CourseContentProvider>
