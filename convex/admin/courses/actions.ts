@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 import { api } from "../../_generated/api";
 import { internalAction } from "../../_generated/server";
-import { embedText } from "../../lib";
 import { buildCourseQuery } from "../../utils";
+import { embedText } from "../../lib/embedding";
 
 export const generateAndStoreCourseEmbeddings = internalAction({
   args: {

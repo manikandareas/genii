@@ -1,8 +1,9 @@
 import { v } from "convex/values";
 import { action, internalAction } from "../_generated/server";
-import { clerkClient, embedText } from "../lib";
 import { buildPreferenceEmbeddingText } from "../utils";
 import { api } from "../_generated/api";
+import { clerkClient } from "../lib/clerk";
+import { embedText } from "../lib/embedding";
 
 export const updateClerkPublicMetadata = action({
   args: {
