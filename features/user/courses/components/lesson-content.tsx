@@ -277,27 +277,37 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         )}
       </footer>
 
-      <Drawer open={isSidebarOpen} onOpenChange={setSidebarOpen}>
-        <DrawerTrigger asChild>
-          <Button
-            type="button"
-            size="sm"
-            variant="default"
-            aria-label="Buka daftar pelajaran"
-            className="fixed bottom-20 right-6 z-50 md:hidden"
-          >
-            <Library className="h-5 w-5" />
+      <div className="fixed bottom-20 right-6 z-50 md:hidden flex items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="hover:backdrop-blur-sm"
+          onClick={() => setDialogOpen(!isDialogOpen)}
+        >
+          <TerminalSquare /> Artifacts
+        </Button>
 
-            <span>Kurikulum</span>
-          </Button>
-        </DrawerTrigger>
-        <DrawerTitle className="sr-only">Kurikulum</DrawerTitle>
-        <DrawerContent className="lg:hidden border-none bg-transparent shadow-none">
-          <div className="mx-auto h-[75vh] w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-sidebar shadow-[0_15px_45px_hsl(var(--muted)/0.35)]">
-            <CourseSidebar variant="drawer" className="h-full" />
-          </div>
-        </DrawerContent>
-      </Drawer>
+        <Drawer open={isSidebarOpen} onOpenChange={setSidebarOpen}>
+          <DrawerTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              aria-label="Buka daftar pelajaran"
+            >
+              <Library className="h-5 w-5" />
+
+              <span>Kurikulum</span>
+            </Button>
+          </DrawerTrigger>
+          <DrawerTitle className="sr-only">Kurikulum</DrawerTitle>
+          <DrawerContent className="lg:hidden border-none bg-transparent shadow-none">
+            <div className="mx-auto h-[75vh] w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-sidebar shadow-[0_15px_45px_hsl(var(--muted)/0.35)]">
+              <CourseSidebar variant="drawer" className="h-full" />
+            </div>
+          </DrawerContent>
+        </Drawer>
+      </div>
     </div>
   );
 }
