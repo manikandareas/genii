@@ -41,15 +41,19 @@ export const StepsContainer = ({ parts }: { parts: UIMessagePart[] }) => {
         if (part.type === "reasoning") {
           return (
             <Step isLast={isLast} key={index.toString()} title="Thinking">
+              {/* @ts-expect-error the type of part is not assignable to the type of UIMessagePart */}
               <p className="text-gray-600">{part.reasoning}</p>
             </Step>
           );
         }
         if (part.type === "tool-invocation") {
+          // @ts-expect-error the type of part is not assignable to the type of UIMessagePart
           const title = `Call to ${part.toolInvocation.toolName}`;
+          // @ts-expect-error the type of part is not assignable to the type of UIMessagePart
           switch (part.toolInvocation.toolName) {
             case "find_relevant_context": {
               const toolResults = (
+                // @ts-expect-error the type of part is not assignable to the type of UIMessagePart
                 part.toolInvocation as {
                   result: {
                     content: string;
@@ -79,6 +83,7 @@ export const StepsContainer = ({ parts }: { parts: UIMessagePart[] }) => {
                     <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 p-2 text-gray-700">
                       <pre className="whitespace-pre-wrap font-mono text-xs">
                         <code>
+                          {/* @ts-expect-error the type of part is not assignable to the type of UIMessagePart */}
                           {JSON.stringify(part.toolInvocation.args, null, 2)}
                         </code>
                       </pre>
@@ -153,6 +158,7 @@ export const StepsContainer = ({ parts }: { parts: UIMessagePart[] }) => {
                   <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 p-2 text-gray-700">
                     <pre className="whitespace-pre-wrap font-mono text-xs">
                       <code>
+                        {/* @ts-expect-error the type of part is not assignable to the type of UIMessagePart */}
                         {JSON.stringify(part.toolInvocation.args, null, 2)}
                       </code>
                     </pre>
