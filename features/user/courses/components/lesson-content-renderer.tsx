@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+
+import { useMemo, useEffect } from "react";
+
 import { createSlateEditor } from "platejs";
 import type { Value } from "platejs";
 
@@ -24,6 +26,20 @@ export function LessonContentRenderer({
       }),
     [content],
   );
+
+  // Handle URL hash on component mount to scroll to heading
+  useEffect(() => {
+    const hash = window.location.hash.slice(1); // Remove the # symbol
+    if (hash) {
+      // Use setTimeout to ensure the DOM is fully rendered
+      setTimeout(() => {
+        const element = document.getElementById(hash);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, [content]);
 
   return <EditorStatic editor={editor} className={className} />;
 }
