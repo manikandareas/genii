@@ -47,7 +47,6 @@ function buildHref(courseSlug: string, item: CourseContentItem) {
 export default function LessonContent({ lessonSlug }: LessonContentProps) {
   const {
     course,
-    chapters,
     orderedContents,
     getContentBySlug,
     enrollment,
@@ -57,14 +56,6 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   const currentItem = getContentBySlug(lessonSlug);
-
-  const lessonChapter = useMemo(
-    () =>
-      chapters.find((chapter) =>
-        chapter.contents.some((content) => content.doc.slug === lessonSlug),
-      ),
-    [chapters, lessonSlug],
-  );
 
   const currentIndex = useMemo(
     () => orderedContents.findIndex((item) => item.doc.slug === lessonSlug),
@@ -77,18 +68,6 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
     currentIndex >= 0 && currentIndex < orderedContents.length - 1
       ? orderedContents[currentIndex + 1]
       : undefined;
-
-  const lessonItems = useMemo(
-    () => orderedContents.filter((item) => item.type === "lesson"),
-    [orderedContents],
-  );
-
-  const lessonPosition = useMemo(
-    () => lessonItems.findIndex((item) => item.doc.slug === lessonSlug),
-    [lessonItems, lessonSlug],
-  );
-
-  const lessonCount = lessonItems.length;
 
   const lessonValue: Value = useMemo(() => {
     if (currentItem?.type !== "lesson") {
