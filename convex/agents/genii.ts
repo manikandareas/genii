@@ -116,7 +116,7 @@ export const findRelevantContext = createTool({
 });
 
 export const geniiAgent = new Agent(components.agent, {
-  languageModel: openai.chat("gpt-5"),
+  languageModel: openai.chat("gpt-5-mini"),
   textEmbeddingModel: openai.textEmbeddingModel("text-embedding-3-small"),
   name: "Genii Agent",
   instructions: `
@@ -178,7 +178,6 @@ Kualitas Layanan:
   tools: {
     find_relevant_context: findRelevantContext,
   },
-
   contextOptions: {
     searchOptions: {
       limit: 5,
