@@ -117,7 +117,7 @@ export function HeadingElementStatic({
   };
 
   const headingContent = hasHistory ? (
-    <span className="after:-z-10 relative inline-block px-1 after:absolute after:inset-x-0 after:bottom-1 after:h-2 after:rounded-sm after:bg-amber-200/70 after:transition-colors after:duration-200 after:content-[''] group-hover/h1:after:bg-amber-300/80 dark:after:bg-amber-500/30">
+    <span className="after:-z-10 relative inline-block px-1 after:absolute after:inset-x-0 after:bottom-1 after:h-2 after:rounded-sm after:bg-green-200/70 after:transition-colors after:duration-200 after:content-[''] group-hover/h1:after:bg-green-300/80 dark:after:bg-green-500/30">
       {props.children}
     </span>
   ) : (
@@ -159,7 +159,7 @@ export function HeadingElementStatic({
           headingVariants({ variant }),
           "group scroll-mt-24 cursor-pointer",
           hasHistory &&
-            "hover:-translate-y-0.5 w-fit cursor-pointer rounded-md transition-transform duration-200 focus-visible:outline-2 focus-visible:outline-amber-400 focus-visible:outline-offset-2 dark:focus-visible:outline-amber-300",
+            "hover:-translate-y-0.5 w-fit cursor-pointer rounded-md transition-transform duration-200 focus-visible:outline-2 focus-visible:outline-green-400 focus-visible:outline-offset-2 dark:focus-visible:outline-green-300",
         )}
         {...props}
         attributes={{
