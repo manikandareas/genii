@@ -162,7 +162,7 @@ export default function HeroSection() {
                   alt="Platform Belajar AI Genii"
                   className="relative aspect-15/8 rounded-2xl bg-background"
                   height="1440"
-                  src="https://linear.app/static/og/homepage-2024.jpg"
+                  src="/og-image.png"
                   width="2700"
                 />
               </div>
