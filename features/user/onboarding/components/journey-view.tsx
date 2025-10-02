@@ -205,7 +205,7 @@ export function JourneyView() {
     timelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const { data, status, refetch, isFetching } = useQuery(
+  const { data, status } = useQuery(
     convexQuery(
       api.users.recommendation.queries.getCurrentUserRecommendation,
       {},
@@ -325,7 +325,7 @@ export function JourneyView() {
   }, [recommendations]);
 
   const stageCopy = STAGE_COPY[stage];
-  const isError = status === "error";
+  // const isError = status === "error";
 
   // Typing animation effect (per word)
   useEffect(() => {
@@ -339,7 +339,7 @@ export function JourneyView() {
 
     // Split text into words
     const words = textToDisplay.split(" ");
-    
+
     // Reset and start typing animation when summary changes
     setDisplayedText("");
     setIsTyping(true);
