@@ -329,34 +329,51 @@ export function JourneyView() {
 
   // Typing animation effect (per word)
   useEffect(() => {
-    const textToDisplay = recommendation?.summary || "";
+    const rawSummary = recommendation?.summary ?? "";
+    const sanitizedSummary = rawSummary.trim();
 
-    if (!textToDisplay) {
+    if (!sanitizedSummary) {
       setDisplayedText("");
       setIsTyping(false);
       return;
     }
 
-    // Split text into words
-    const words = textToDisplay.split(" ");
+    const words = sanitizedSummary
+      .split(/\s+/)
+      .filter((word) => Boolean(word) && word !== "");
 
-    // Reset and start typing animation when summary changes
+    if (words.length === 0) {
+      setDisplayedText("");
+      setIsTyping(false);
+      return;
+    }
+
     setDisplayedText("");
     setIsTyping(true);
     let currentWordIndex = 0;
 
     const typingInterval = setInterval(() => {
-      if (currentWordIndex < words.length) {
-        setDisplayedText((prev) => {
-          const newText = prev + (prev ? " " : "") + words[currentWordIndex];
-          return newText;
-        });
-        currentWordIndex++;
-      } else {
+      if (currentWordIndex >= words.length) {
+        setIsTyping(false);
+        clearInterval(typingInterval);
+        return;
+      }
+
+      const nextWord = words[currentWordIndex];
+
+      if (!nextWord) {
+        currentWordIndex += 1;
+        return;
+      }
+
+      setDisplayedText((prev) => (prev ? `${prev} ${nextWord}` : nextWord));
+      currentWordIndex += 1;
+
+      if (currentWordIndex >= words.length) {
         setIsTyping(false);
         clearInterval(typingInterval);
       }
-    }, 80); // Speed of typing (80ms per word)
+    }, 90); // Speed of typing (90ms per word)
 
     return () => clearInterval(typingInterval);
   }, [recommendation?.summary]);
