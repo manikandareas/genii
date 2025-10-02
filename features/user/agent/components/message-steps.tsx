@@ -65,6 +65,7 @@ export const StepsContainer = ({ parts }: { parts: UIMessagePart[] }) => {
               } catch {
                 parsedOutput = rawOutput;
               }
+              // @ts-expect-error the type of part is not assignable to the type of UIMessagePart
               const inputData = part.input || part.args || {};
               const query =
                 inputData.query || inputData.library || "Unknown query";
@@ -259,7 +260,7 @@ export const StepsContainer = ({ parts }: { parts: UIMessagePart[] }) => {
             }
             default:
               return (
-                <Step isLast={isLast} key={index.toString()} title={title}>
+                <Step isLast={isLast} key={index.toString()} title={"Unknown"}>
                   <div className="flex items-center gap-2 rounded-md border border-border bg-muted p-2 text-muted-foreground">
                     <pre className="whitespace-pre-wrap font-mono text-xs">
                       <code>
