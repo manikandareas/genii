@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Kebijakan Privasi",
-  description: "Kebijakan privasi Genii - Pelajari bagaimana kami melindungi data pribadi Anda, menggunakan informasi, dan menjaga keamanan saat menggunakan platform pembelajaran AI kami.",
+  description:
+    "Kebijakan privasi Genii - Pelajari bagaimana kami melindungi data pribadi Anda, menggunakan informasi, dan menjaga keamanan saat menggunakan platform pembelajaran AI kami.",
 };
 
 export default function PrivacyPage() {
@@ -214,8 +215,8 @@ export default function PrivacyPage() {
                 </li>
               </ul>
               <p className="leading-relaxed">
-                Untuk menggunakan hak-hak ini, silakan hubungi kami di
-                privacy@genii.id
+                Untuk menggunakan hak-hak ini, silakan hubungi kami di privacy@
+                {process.env.NEXT_PUBLIC_APP_DOMAIN}
               </p>
             </div>
           </section>

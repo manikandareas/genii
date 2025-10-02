@@ -81,11 +81,6 @@ export function Navbar() {
                 {NAVBAR_COPY.auth.signIn}
               </Button>
             </SignInButton>
-            {/* <SignUpButton mode="modal">
-              <Button className="z-50" type="button">
-                {NAVBAR_COPY.auth.getStarted}
-              </Button>
-            </SignUpButton> */}
           </SignedOut>
           <SignedIn>
             <Link

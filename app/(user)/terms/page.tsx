@@ -3,7 +3,8 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Syarat & Ketentuan",
-  description: "Syarat dan ketentuan penggunaan platform Genii - Ketahui hak dan kewajiban Anda sebagai pengguna platform pembelajaran AI kami.",
+  description:
+    "Syarat dan ketentuan penggunaan platform Genii - Ketahui hak dan kewajiban Anda sebagai pengguna platform pembelajaran AI kami.",
 };
 
 export default function TermsPage() {
@@ -204,11 +205,11 @@ export default function TermsPage() {
               silakan hubungi kami melalui:
             </p>
             <ul className="list-none space-y-2 text-muted-foreground">
-              <li>Email: support@genii.id</li>
+              <li>Email: support@{process.env.NEXT_PUBLIC_APP_DOMAIN}</li>
               <li>
                 Website:{" "}
                 <Link href="/" className="text-primary hover:underline">
-                  www.genii.id
+                  www.{process.env.NEXT_PUBLIC_APP_DOMAIN}
                 </Link>
               </li>
             </ul>

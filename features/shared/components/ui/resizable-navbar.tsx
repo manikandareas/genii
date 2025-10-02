@@ -277,7 +277,7 @@ export const NavbarLogo = () => {
   return (
     <Link
       aria-label="Kembali ke beranda"
-      className="group relative z-20 mr-4 flex items-center space-x-3 rounded-full px-3 py-2 transition-all duration-150 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+      className="group relative z-20 mr-4 flex items-center hover:pl-4 hover:pr-6 space-x-3 rounded-full px-3 py-2 transition-all duration-150 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
       href="/"
     >
       <div
@@ -287,7 +287,7 @@ export const NavbarLogo = () => {
       >
         <Logo className=" filter" />
       </div>
-      <span className="font-medium text-base text-text-primary transition-colors duration-150 group-hover:text-accent">
+      <span className="font-medium text-base text-primary transition-colors duration-150 hover:font-bold">
         Genii
       </span>
     </Link>
