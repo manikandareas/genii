@@ -94,10 +94,10 @@ export function ArtifactsPanel({
     <div className="flex h-full flex-col border-l border-border/70 bg-card">
       <div className="flex items-center justify-between border-b border-border/70 px-4 py-3">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={handleClose}>
+          <Button variant="outline" onClick={handleClose}>
             <X />
           </Button>
-          <span className="md:text-base font-semibold text-muted-foreground truncate w-52 md:w-full text-sm">
+          <span className=" font-semibold text-muted-foreground truncate w-52 md:max-w-sm md:w-full text-sm">
             {threadDetails?.data?.title || draftPrompt || "Artifacts"}
           </span>
         </div>
