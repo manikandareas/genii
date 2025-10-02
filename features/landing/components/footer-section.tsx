@@ -1,8 +1,8 @@
 "use client";
 import { withPathname } from "@/lib/with-pathname";
 import { SignUpButton } from "@clerk/nextjs";
-import { Pyramid } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "./logo";
 
 interface MenuItem {
   title: string;
@@ -66,7 +66,7 @@ const Footer2 = ({
       ],
     },
   ],
-  copyright = "© 2025 Genii. Belajar AI-powered untuk masa depan tech Indonesia.",
+  copyright = "© 2025 Genii. Bertumbuh bersama AI untuk masa depan tech Indonesia.",
   bottomLinks = [
     { text: "Syarat & Ketentuan", url: "/terms" },
     { text: "Kebijakan Privasi", url: "/privacy" },
@@ -79,7 +79,7 @@ const Footer2 = ({
           <div className="grid grid-cols-2 gap-8 lg:grid-cols-6">
             <div className="col-span-2 mb-8 lg:mb-0">
               <div className="flex items-center gap-2 lg:justify-start">
-                <Pyramid />
+                <Logo />
                 Genii
               </div>
               <p className="mt-4 font-bold">{tagline}</p>
