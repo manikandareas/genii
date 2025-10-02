@@ -96,14 +96,36 @@ export const saveOnboarding = mutation({
       throw new Error("Unauthorized");
     }
 
-    const user = await ctx.db
+    let user = await ctx.db
       .query("users")
       .withIndex("by_clerk", (q) => q.eq("clerkId", identity.subject))
       .first();
 
     if (!user) {
       // we need to create a user
-      throw new Error("User not found");
+      await ctx.db.insert("users", {
+        clerkId: identity.subject,
+        fullName: identity.name || `${identity.firstName} ${identity.lastName}`,
+        email: identity.email as string,
+        avatarUrl:
+          identity.pictureUrl ||
+          `https://ui-avatars.com/api/?background=000000&color=fff&name=${identity.firstName} ${identity.lastName}`,
+        firstName: identity.firstName?.toString() || "unknown",
+        lastName: identity.lastName?.toString() || "unknown",
+        username:
+          identity.nickname ?? identity.email?.split("@")[0] ?? "unknown",
+        role: "user",
+        onboardingStatus: "completed",
+      });
+
+      user = await ctx.db
+        .query("users")
+        .withIndex("by_clerk", (q) => q.eq("clerkId", identity.subject))
+        .first();
+
+      if (!user) {
+        throw new Error("User not found");
+      }
     }
 
     await ctx.db.patch(user._id, {
