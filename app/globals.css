@@ -60,6 +60,27 @@
         350% 50%;
     }
   }
+
+  @keyframes loading {
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(250%);
+    }
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes typing {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 }
 
 :root {

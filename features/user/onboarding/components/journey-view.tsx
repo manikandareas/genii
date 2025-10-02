@@ -2,8 +2,8 @@
 
 import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, Loader2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowDown, ArrowRight, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -11,7 +11,6 @@ import { Button } from "@/features/shared/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/features/shared/components/ui/card";
@@ -19,11 +18,12 @@ import {
   Timeline,
   type TimelineEntry,
 } from "@/features/shared/components/ui/timeline";
-import Image from "next/image";
 import {
   CourseEnrollmentDialog,
   type EnrollmentCourse,
 } from "@/features/user/courses/components/course-enrollment-dialog";
+import Image from "next/image";
+import Link from "next/link";
 
 type JourneyStage = "idle" | "collecting" | "ranking" | "completed" | "failed";
 
@@ -108,11 +108,102 @@ const difficultyLabels: Record<
   advanced: "Advanced",
 };
 
+function TimelineSkeleton() {
+  return (
+    <div className="w-full font-sans">
+      <div className="relative max-w-7xl mx-auto pb-12 sm:pb-20">
+        {/* Skeleton Items */}
+        {[1, 2, 3].map((index) => (
+          <div
+            key={index}
+            className="flex pt-8 sm:pt-16 md:pt-24 lg:pt-40 gap-4 sm:gap-6 md:gap-10 justify-between"
+          >
+            {/* Left Side - Title & Reason */}
+            <div className="sticky flex flex-col md:flex-row z-40 items-start md:items-center top-20 sm:top-32 md:top-40 self-start sm:w-full sm:max-w-sm lg:max-w-md">
+              {/* Circle Indicator */}
+              <div className="h-8 w-8 sm:h-10 sm:w-10 absolute left-2 sm:left-3 md:left-3 rounded-full bg-white dark:bg-black flex items-center justify-center shadow-sm border border-neutral-200 dark:border-neutral-700">
+                <div className="h-3 w-3 sm:h-4 sm:w-4 rounded-full bg-muted animate-pulse" />
+              </div>
+
+              <div className="flex flex-col items-start gap-2 sm:gap-3 md:gap-5 w-full">
+                {/* Title Skeleton - Desktop */}
+                <div className="hidden md:block md:pl-16 lg:pl-20 w-full">
+                  <div className="h-8 lg:h-10 xl:h-12 2xl:h-14 bg-muted rounded animate-pulse w-3/4" />
+                </div>
+                {/* Reason Skeleton - Desktop */}
+                <div className="hidden md:block md:pl-16 lg:pl-20 w-full space-y-2">
+                  <div className="h-3 lg:h-4 bg-muted/70 rounded animate-pulse w-full max-w-md" />
+                  <div className="h-3 lg:h-4 bg-muted/70 rounded animate-pulse w-2/3 max-w-md" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side - Content Card */}
+            <div className="relative pl-12 sm:pl-16 md:pl-4 pr-4 w-full">
+              {/* Title & Reason Skeleton - Mobile */}
+              <div className="md:hidden mb-4 space-y-3">
+                <div className="h-7 sm:h-8 bg-muted rounded animate-pulse w-3/4" />
+                <div className="space-y-2">
+                  <div className="h-3 bg-muted/70 rounded animate-pulse w-full" />
+                  <div className="h-3 bg-muted/70 rounded animate-pulse w-2/3" />
+                </div>
+              </div>
+
+              {/* Card Skeleton */}
+              <Card className="w-full sm:ml-auto max-w-none sm:w-md overflow-hidden border shadow-sm">
+                {/* Thumbnail Skeleton */}
+                <div className="relative aspect-video w-full h-48 bg-muted animate-pulse" />
+
+                <CardHeader className="space-y-3 pb-3">
+                  <div className="flex items-start gap-3">
+                    {/* Title Skeleton */}
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 bg-muted rounded animate-pulse w-4/5" />
+                      <div className="h-5 bg-muted rounded animate-pulse w-3/5" />
+                    </div>
+                    {/* Badge Skeleton */}
+                    <div className="h-6 w-10 bg-muted rounded-full animate-pulse shrink-0" />
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  {/* Description Skeleton */}
+                  <div className="space-y-2">
+                    <div className="h-3 bg-muted/70 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-muted/70 rounded animate-pulse w-full" />
+                    <div className="h-3 bg-muted/70 rounded animate-pulse w-4/5" />
+                  </div>
+
+                  {/* Footer Skeleton */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+                    <div className="h-6 w-24 bg-muted rounded-full animate-pulse" />
+                    <div className="h-9 w-full sm:w-32 bg-muted rounded-md animate-pulse" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ))}
+
+        {/* Vertical Line Skeleton */}
+        <div className="absolute left-6 sm:left-8 md:left-8 top-0 w-[2px] h-full bg-gradient-to-b from-transparent via-muted to-transparent" />
+      </div>
+    </div>
+  );
+}
+
 export function JourneyView() {
   const [selectedCourse, setSelectedCourse] = useState<EnrollmentCourse | null>(
     null,
   );
   const [isEnrollmentOpen, setEnrollmentOpen] = useState(false);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const [displayedText, setDisplayedText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  const scrollToTimeline = () => {
+    timelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const { data, status, refetch, isFetching } = useQuery(
     convexQuery(
@@ -180,36 +271,7 @@ export function JourneyView() {
 
   const courseTimelineData: TimelineEntry[] = useMemo(() => {
     if (recommendations.length === 0) {
-      return [
-        {
-          title: "Menunggu Rekomendasi",
-          reason: "Sistem sedang memproses preferensi Anda",
-          content: (
-            <div className="w-full max-w-none rounded-2xl border border-white/15 bg-white/80 p-4 sm:p-6 shadow-sm backdrop-blur-md dark:border-neutral-800 dark:bg-neutral-900/70">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
-                  <Loader2 className="size-4 animate-spin text-primary" />
-                </div>
-                <span className="text-sm sm:text-base font-medium text-primary">
-                  Menyiapkan journey belajarmu
-                </span>
-              </div>
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Kami sedang menyusun kursus-kursus terbaik berdasarkan
-                preferensimu. Journey pembelajaran personalmu akan segera siap!
-              </p>
-              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-primary/60 rounded-full animate-pulse"></div>
-                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-pulse delay-100"></div>
-                  <div className="w-2 h-2 bg-primary/20 rounded-full animate-pulse delay-200"></div>
-                </div>
-                <span>Proses ini biasanya memakan waktu 30-60 detik</span>
-              </div>
-            </div>
-          ),
-        },
-      ];
+      return [];
     }
 
     return recommendations.map((item, index) => ({
@@ -217,9 +279,9 @@ export function JourneyView() {
       reason:
         item.reason || `Rekomendasi #${index + 1} berdasarkan preferensi Anda`,
       content: (
-        <Card className="w-full sm:ml-auto max-w-none sm:w-md pt-0 overflow-hidden">
+        <Card className="w-full pt-0 sm:ml-auto max-w-none sm:w-md overflow-hidden border shadow-sm">
           {item.course.thumbnail?.url && (
-            <div className="relative aspect-video w-full h-36 sm:h-56">
+            <div className="relative aspect-video w-full h-48">
               <Image
                 src={item.course.thumbnail.url}
                 alt={item.course.title}
@@ -228,22 +290,22 @@ export function JourneyView() {
               />
             </div>
           )}
-          <CardHeader className="space-y-3">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <CardTitle className="text-lg sm:text-xl font-semibold flex-1 leading-tight">
+          <CardHeader className="space-y-3 pb-3">
+            <div className="flex items-start gap-3">
+              <CardTitle className="text-lg font-semibold flex-1 leading-tight tracking-tight">
                 {item.course.title}
               </CardTitle>
-              <span className="rounded-full border border-primary/40 bg-primary/10 px-2 sm:px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary shrink-0">
+              <span className="rounded-full border bg-muted px-2.5 py-0.5 text-xs font-medium shrink-0">
                 #{index + 1}
               </span>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {item.course.description}
             </p>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-              <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground w-fit">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+              <span className="rounded-full border bg-muted/50 px-3 py-1 text-xs font-medium w-fit">
                 {difficultyLabels[item.course.difficulty]}
               </span>
               <Button
@@ -253,7 +315,7 @@ export function JourneyView() {
                 onClick={() => handleOpenEnrollment(item.course)}
               >
                 Mulai Belajar
-                <ArrowRight className="size-4" />
+                <ArrowRight className="size-4 ml-1.5" />
               </Button>
             </div>
           </CardContent>
@@ -265,101 +327,136 @@ export function JourneyView() {
   const stageCopy = STAGE_COPY[stage];
   const isError = status === "error";
 
+  // Typing animation effect (per word)
+  useEffect(() => {
+    const textToDisplay = recommendation?.summary || "";
+
+    if (!textToDisplay) {
+      setDisplayedText("");
+      setIsTyping(false);
+      return;
+    }
+
+    // Split text into words
+    const words = textToDisplay.split(" ");
+    
+    // Reset and start typing animation when summary changes
+    setDisplayedText("");
+    setIsTyping(true);
+    let currentWordIndex = 0;
+
+    const typingInterval = setInterval(() => {
+      if (currentWordIndex < words.length) {
+        setDisplayedText((prev) => {
+          const newText = prev + (prev ? " " : "") + words[currentWordIndex];
+          return newText;
+        });
+        currentWordIndex++;
+      } else {
+        setIsTyping(false);
+        clearInterval(typingInterval);
+      }
+    }, 80); // Speed of typing (80ms per word)
+
+    return () => clearInterval(typingInterval);
+  }, [recommendation?.summary]);
+
   return (
-    <div className="relative min-h-screen overflow-hidden pb-12 sm:pb-28">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 sm:h-64" />
+    <div className="relative min-h-screen pb-24">
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 pt-12 sm:px-6 lg:px-8">
+        {/* Skip Button */}
+        <div className="flex items-center justify-end">
+          <Link href={"/courses"}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Lewati untuk sekarang
+              <ArrowRight className="size-4 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-8 sm:gap-12 px-4 pt-8 sm:pt-16 sm:px-6 lg:px-8">
-        <section className="flex flex-col space-y-16 sm:space-y-28 pt-6 sm:pt-10 px-0 sm:px-4 md:px-8 lg:px-10">
-          <div className="space-y-4 sm:space-y-6">
-            <h1 className="mb-4 max-w-4xl text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Kami memasak journey khusus untuk mu!
-            </h1>
-
-            <div className="max-w-2xl text-base sm:text-lg text-neutral-700 dark:text-neutral-300 leading-relaxed">
-              Setiap orang memiliki kebutuhan yang berbeda-beda, kami menyusun
-              dan mencari kursus yang sesuai dengan preferensimu.
-            </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 lg:gap-12">
-            <div className="flex-1 w-full max-w-2xl">
-              {recommendation?.summary ? (
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-foreground">
-                    Kamu akan belajar
-                  </h3>
-                  <p className="text-sm sm:text-base font-mono text-muted-foreground tracking-tight leading-relaxed">
-                    {recommendation.summary}
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-muted-foreground">
-                    Ringkasan sedang disiapkan
-                  </h3>
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    Ringkasan personal akan muncul setelah proses rekomendasi
-                    selesai.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <Card className="w-full max-w-md lg:w-auto lg:min-w-[320px] border border-white/10 bg-white/70 shadow-lg backdrop-blur-sm dark:border-neutral-800 dark:bg-neutral-900/70">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Status rekomendasi</CardTitle>
-                <CardDescription className="text-sm">
-                  {recommendation
-                    ? `Status: ${recommendation.status.replace("_", " ")}`
-                    : "Menunggu rekomendasi pertama kamu."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-background/60 px-4 py-3 text-sm shadow-sm dark:border-neutral-700">
-                  {stage === "completed" ? (
-                    <div className="size-2 rounded-full bg-emerald-500 shrink-0" />
-                  ) : stage === "failed" ? (
-                    <AlertTriangle className="size-4 text-destructive shrink-0" />
-                  ) : (
-                    <Loader2 className="size-4 animate-spin text-primary shrink-0" />
-                  )}
-                  <span className="font-medium leading-tight">
-                    {recommendation?.generationMessage ?? stageCopy.label}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Halaman ini akan memperbarui status secara real-time. Kamu
-                  tidak perlu memuat ulang, tetapi tombol segarkan tetap
-                  tersedia bila dibutuhkan.
-                </p>
-                {(isError || stage === "failed") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => refetch()}
-                    disabled={isFetching}
-                    className="w-full"
-                  >
-                    {isFetching ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin mr-2" />
-                        Memuat ulang...
-                      </>
-                    ) : (
-                      "Coba lagi"
-                    )}
-                  </Button>
+        {/* Hero Section */}
+        <section className="space-y-24 pt-4">
+          {/* Heading */}
+          <div className="space-y-8 max-w-3xl">
+            <div className="space-y-6">
+              {/* Status Badge */}
+              <div className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-3 py-1.5 text-xs font-medium">
+                {stage === "completed" ? (
+                  <div className="size-1.5 rounded-full bg-foreground" />
+                ) : (
+                  <Loader2 className="size-3 animate-spin" />
                 )}
-              </CardContent>
-            </Card>
+                <span>
+                  {recommendation?.generationMessage || stageCopy.label}
+                </span>
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1]">
+                Kami memasak journey khusus untuk mu!
+              </h1>
+
+              {/* Summary with typing animation */}
+              <div className="text-sm text-muted-foreground leading-relaxed max-w-2xl min-h-[60px]">
+                {recommendation?.summary ? (
+                  <div className="relative">
+                    <p className="font-mono whitespace-pre-wrap">
+                      {displayedText}
+                      {isTyping && (
+                        <span className="inline-block w-0.5 h-4 bg-foreground ml-0.5 animate-pulse align-middle" />
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-2">
+                    <span className="animate-[typing_1.5s_ease-in-out_infinite]">
+                      Chef Genii sedang memasak
+                    </span>
+                    <span className="flex gap-0.5">
+                      <span
+                        className="inline-block w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: "0s" }}
+                      />
+                      <span
+                        className="inline-block w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                      <span
+                        className="inline-block w-1 h-1 bg-muted-foreground rounded-full animate-bounce"
+                        style={{ animationDelay: "0.4s" }}
+                      />
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Scroll Indicator - Only show when completed */}
+            {stage === "completed" && recommendations.length > 0 && (
+              <button
+                onClick={scrollToTimeline}
+                className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span>Lihat rekomendasi kursus</span>
+                <ArrowDown className="size-4 group-hover:translate-y-0.5 transition-transform" />
+              </button>
+            )}
           </div>
         </section>
 
-        <div className="w-full">
-          <Timeline data={courseTimelineData} />
-        </div>
+        {/* Timeline Section */}
+        <section ref={timelineRef} className="pt-8 scroll-mt-24">
+          {recommendations.length === 0 ? (
+            <TimelineSkeleton />
+          ) : (
+            <Timeline data={courseTimelineData} />
+          )}
+        </section>
       </div>
+
       {selectedCourse && (
         <CourseEnrollmentDialog
           course={selectedCourse}
