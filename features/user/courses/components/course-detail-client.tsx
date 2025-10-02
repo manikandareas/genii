@@ -10,7 +10,9 @@ import DetailPromo from "./detail-promo";
 import { CourseEnrollmentDialog } from "./course-enrollment-dialog";
 
 interface CourseDetailClientProps {
-  course: Doc<"courses">;
+  course: Doc<"courses"> & {
+    topics: Doc<"topics">[];
+  };
 }
 
 export function CourseDetailClient({ course }: CourseDetailClientProps) {

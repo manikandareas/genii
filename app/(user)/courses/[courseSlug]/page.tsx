@@ -1,4 +1,5 @@
 import { api } from "@/convex/_generated/api";
+import { Doc } from "@/convex/_generated/dataModel";
 import { CourseDetailClient } from "@/features/user/courses/components/course-detail-client";
 import { fetchQuery } from "convex/nextjs";
 import { notFound } from "next/navigation";
@@ -22,7 +23,13 @@ export default async function CourseDetailPage(props: Props) {
 
   return (
     <div className="relative mx-auto w-full max-w-6xl space-y-36 px-6 py-8 md:py-16 xl:px-0">
-      <CourseDetailClient course={course} />
+      <CourseDetailClient
+        course={
+          course as Doc<"courses"> & {
+            topics: Doc<"topics">[];
+          }
+        }
+      />
     </div>
   );
 }

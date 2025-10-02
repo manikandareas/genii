@@ -2,7 +2,7 @@
 
 import { Doc } from "@/convex/_generated/dataModel";
 import { Badge } from "@/features/shared/components/ui/badge";
-import { Gamepad } from "lucide-react";
+import { CheckCircle2, Gamepad } from "lucide-react";
 import { COURSE_DETAIL_COPY } from "../constants/course-detail-copy";
 
 interface DetailContentsProps {
@@ -10,6 +10,10 @@ interface DetailContentsProps {
 }
 
 export function DetailContents({ course }: DetailContentsProps) {
+  const learningOutcomes = (course.learningOutcomes ?? []).filter(
+    (outcome) => outcome.trim().length > 0,
+  );
+
   return (
     <section className="flex flex-col items-center gap-16">
       <div className="flex flex-col items-center gap-6">
@@ -37,46 +41,25 @@ export function DetailContents({ course }: DetailContentsProps) {
         </p>
       </div>
 
-      {/* <div className="flex w-full flex-col-reverse items-start gap-8 lg:flex-row">
-        <div className="flex-1 space-y-6">
-          <h3
-            className="flex items-center justify-center gap-2 font-medium text-lg"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            <FolderTree size={18} />
-            {COURSE_DETAIL_COPY.contents.structure.title}
-          </h3>
-          <div
-            className="rounded-xl border bg-white/3 p-4"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            <CourseFileTree
-              className="h-fit border-none"
-              course={course}
-              enrollment={enrollment}
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-6">
-          <h3 className="flex items-center justify-center gap-2 font-semibold text-lg">
-            <Goal size={18} />
-            {COURSE_DETAIL_COPY.contents.outcomes.title}
-          </h3>
-          <div
-            className="rounded-xl border bg-white/3 p-4"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            <LearningOutcomes
-              className="h-full"
-              items={
-                COURSE_DETAIL_COPY.contents.outcomes
-                  .defaultItems as unknown as string[]
-              }
-            />
-          </div>
-        </div>
-      </div> */}
+      {learningOutcomes.length > 0 && (
+        <ul className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {learningOutcomes.map((outcome, index) => (
+            <li
+              key={`${outcome}-${index}`}
+              className="flex items-start gap-3 rounded-2xl border bg-white/3 p-5 transition-colors hover:bg-white/5"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <CheckCircle2 className="mt-1 h-5 w-5 text-emerald-400" />
+              <span
+                className="text-left text-sm leading-relaxed"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {outcome}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

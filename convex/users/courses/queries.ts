@@ -1,8 +1,8 @@
 import { getAll } from "convex-helpers/server/relationships";
 import { v } from "convex/values";
+import type { Doc, Id } from "../../_generated/dataModel";
 import { internalQuery, query } from "../../_generated/server";
 import { ensureAuthenticated } from "../../utils";
-import type { Doc, Id } from "../../_generated/dataModel";
 
 export const findCoursesByIds = internalQuery({
   args: {
@@ -24,10 +24,20 @@ export const getCourseBySlug = query({
     slug: v.string(),
   },
   handler: async (ctx, { slug }) => {
-    return await ctx.db
+    const course = await ctx.db
       .query("courses")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
+
+    const topics = (await getAll(
+      ctx.db,
+      course?.topicIds ?? [],
+    )) as Doc<"topics">[];
+
+    return {
+      ...course,
+      topics,
+    };
   },
 });
 
@@ -103,9 +113,7 @@ export const getCourseContent = query({
       lessonIds.size
         ? getAll(ctx.db, Array.from(lessonIds))
         : Promise.resolve([]),
-      quizIds.size
-        ? getAll(ctx.db, Array.from(quizIds))
-        : Promise.resolve([]),
+      quizIds.size ? getAll(ctx.db, Array.from(quizIds)) : Promise.resolve([]),
     ]);
 
     const lessonById = lessons.reduce<Record<string, Doc<"lessons">>>(
