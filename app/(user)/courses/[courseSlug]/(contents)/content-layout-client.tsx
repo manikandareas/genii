@@ -19,7 +19,7 @@ import type {
   QuizDoc,
 } from "@/features/user/courses/types";
 import { cn } from "@/lib/utils";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { SectionAwareAsk } from "@/features/user/agent/components/section-aware-ask";
 
 interface ContentLayoutClientProps {
@@ -157,6 +157,7 @@ export default function ContentLayoutClient({
 }: ContentLayoutClientProps) {
   const { isDialogOpen } = useSectionAsk();
   const { lessonSlug } = useParams();
+  const pathname = usePathname();
   const {
     data: courseDataRaw,
     isLoading,
@@ -181,6 +182,9 @@ export default function ContentLayoutClient({
     [courseDataRaw],
   );
 
+  // Check if pathname contains /play or /result
+  const isQuizPlayOrResult = pathname.includes("/play") || pathname.includes("/result");
+
   if (isLoading && !courseContent) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
@@ -203,6 +207,15 @@ export default function ContentLayoutClient({
           </p>
         </div>
       </div>
+    );
+  }
+
+  // Return simple layout for quiz play or result pages
+  if (isQuizPlayOrResult) {
+    return (
+      <CourseContentProvider value={courseContent}>
+        {children}
+      </CourseContentProvider>
     );
   }
 

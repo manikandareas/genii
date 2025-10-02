@@ -15,7 +15,6 @@ export default async function ContentLayout({
   params,
 }: ContentLayoutProps) {
   const paramsData = await params;
-
   return (
     <SectionAskProvider>
       <ContentLayoutClient courseSlug={paramsData.courseSlug}>

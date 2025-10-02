@@ -21,6 +21,16 @@ export const ensureAdmin = async (ctx: QueryCtx | MutationCtx) => {
   return identity;
 };
 
+export const ensureUser = async (ctx: QueryCtx | MutationCtx) => {
+  const identity = await ensureAuthenticated(ctx);
+
+  if (!identity) {
+    return null;
+  }
+
+  return identity;
+};
+
 // ===== Types sesuai input terbaru =====
 type Level = "beginner" | "intermediate" | "advanced";
 type FocusArea =

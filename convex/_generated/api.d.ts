@@ -38,6 +38,8 @@ import type * as users_courses_mutations from "../users/courses/mutations.js";
 import type * as users_courses_queries from "../users/courses/queries.js";
 import type * as users_mutations from "../users/mutations.js";
 import type * as users_queries from "../users/queries.js";
+import type * as users_quizzes_mutations from "../users/quizzes/mutations.js";
+import type * as users_quizzes_queries from "../users/quizzes/queries.js";
 import type * as users_recommendation_actions from "../users/recommendation/actions.js";
 import type * as users_recommendation_mutations from "../users/recommendation/mutations.js";
 import type * as users_recommendation_queries from "../users/recommendation/queries.js";
@@ -89,6 +91,8 @@ declare const fullApi: ApiFromModules<{
   "users/courses/queries": typeof users_courses_queries;
   "users/mutations": typeof users_mutations;
   "users/queries": typeof users_queries;
+  "users/quizzes/mutations": typeof users_quizzes_mutations;
+  "users/quizzes/queries": typeof users_quizzes_queries;
   "users/recommendation/actions": typeof users_recommendation_actions;
   "users/recommendation/mutations": typeof users_recommendation_mutations;
   "users/recommendation/queries": typeof users_recommendation_queries;
