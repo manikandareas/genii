@@ -104,6 +104,7 @@ export function constructMetadata({
   noIndex = false,
   keywords,
   canonical,
+  robots,
 }: {
   title?: string;
   description?: string;
@@ -111,6 +112,17 @@ export function constructMetadata({
   noIndex?: boolean;
   keywords?: string[];
   canonical?: string;
+  robots?: {
+    index?: boolean;
+    follow?: boolean;
+    googleBot?: {
+      index?: boolean;
+      follow?: boolean;
+      "max-video-preview"?: number;
+      "max-image-preview"?: "none" | "standard" | "large";
+      "max-snippet"?: number;
+    };
+  };
 } = {}): Metadata {
   return {
     title,
@@ -136,12 +148,14 @@ export function constructMetadata({
       images: [image],
       creator: "@genii",
     },
-    ...(noIndex && {
-      robots: {
-        index: false,
-        follow: false,
-      },
-    }),
+    ...(robots
+      ? { robots }
+      : noIndex && {
+          robots: {
+            index: false,
+            follow: false,
+          },
+        }),
     ...(canonical && {
       alternates: {
         canonical,

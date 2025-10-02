@@ -5,14 +5,15 @@ Aplikasi Genii sudah dilengkapi dengan semua keperluan untuk production deployme
 ## ✅ Yang Sudah Disetup
 
 ### SEO & Metadata
-- ✅ **Comprehensive Meta Tags** - Title, description, keywords untuk semua halaman
+- ✅ **Comprehensive Meta Tags** - Title, description, keywords untuk **11 page types**
 - ✅ **Open Graph Tags** - Optimized untuk Facebook, LinkedIn, dan platform lainnya
 - ✅ **Twitter Cards** - Rich previews untuk Twitter
 - ✅ **Dynamic Metadata** - Metadata otomatis untuk course pages
-- ✅ **Structured Data (JSON-LD)** - Schema.org markup untuk SEO
+- ✅ **Structured Data (JSON-LD)** - Schema.org markup untuk SEO (5 schemas)
 - ✅ **Sitemap.xml** - Auto-generated sitemap dengan dynamic course pages
 - ✅ **Robots.txt** - Proper crawling configuration
 - ✅ **Dynamic OG Images** - Auto-generated Open Graph images
+- ✅ **Smart Indexing** - Public pages indexed, protected pages noindex
 
 ### Performance
 - ✅ **Vercel Analytics** - Built-in analytics
@@ -88,23 +89,37 @@ vercel --prod
 
 ```
 ├── app/
-│   ├── layout.tsx                 # Root metadata & structured data
-│   ├── opengraph-image.tsx        # Dynamic OG image generator
-│   ├── robots.ts                  # Robots.txt configuration
-│   ├── sitemap.ts                 # Dynamic sitemap generator
-│   └── (user)/
-│       ├── page.tsx               # Home page metadata
-│       └── courses/
-│           └── [courseSlug]/
-│               └── page.tsx       # Dynamic course metadata
+│   ├── layout.tsx                          # Root metadata & structured data
+│   ├── opengraph-image.tsx                 # Dynamic OG image generator
+│   ├── robots.ts                           # Robots.txt configuration
+│   ├── sitemap.ts                          # Dynamic sitemap generator
+│   ├── (user)/
+│   │   ├── page.tsx                        # ✅ Home page metadata
+│   │   ├── courses/
+│   │   │   ├── page.tsx                    # ✅ Courses list metadata
+│   │   │   └── [courseSlug]/
+│   │   │       ├── page.tsx                # ✅ Course detail (dynamic)
+│   │   │       └── (contents)/
+│   │   │           ├── l/[lessonSlug]/
+│   │   │           │   └── page.tsx        # ✅ Lesson metadata
+│   │   │           └── q/[quizSlug]/
+│   │   │               ├── page.tsx        # ✅ Quiz metadata
+│   │   │               ├── play/page.tsx   # ✅ Quiz play metadata
+│   │   │               └── result/page.tsx # ✅ Quiz result metadata
+│   │   ├── privacy/page.tsx                # ✅ Privacy policy metadata
+│   │   └── terms/page.tsx                  # ✅ Terms metadata
+│   └── onboarding/
+│       ├── page.tsx                        # ✅ Onboarding metadata
+│       └── journey/page.tsx                # ✅ Journey metadata
 ├── lib/
-│   ├── seo.config.ts             # SEO configuration & utilities
-│   └── structured-data.ts        # JSON-LD schema generators
+│   ├── seo.config.ts                       # SEO configuration & utilities
+│   └── structured-data.ts                  # JSON-LD schema generators
 ├── docs/
-│   ├── seo-setup.md              # SEO documentation
-│   └── production-deployment.md  # Deployment guide
-├── next.config.ts                # Security headers
-└── env.example                   # Environment variables template
+│   ├── seo-setup.md                        # SEO documentation
+│   ├── seo-pages-summary.md                # Pages metadata summary
+│   └── production-deployment.md            # Deployment guide
+├── next.config.ts                          # Security headers
+└── env.example                             # Environment variables template
 ```
 
 ## 🔍 SEO Features Detail

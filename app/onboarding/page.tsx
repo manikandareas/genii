@@ -8,6 +8,10 @@ import { ONBOARDING_COPY } from "@/features/user/onboarding/constants/onboarding
 export const metadata: Metadata = {
   title: ONBOARDING_COPY.meta.title,
   description: ONBOARDING_COPY.meta.description,
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function OnboardingPage() {

@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { JourneyView } from "@/features/user/onboarding/components/journey-view";
 
 export const metadata: Metadata = {
-  title: "Journey rekomendasi kursus",
+  title: "Journey Rekomendasi Kursus",
   description:
-    "Pantau bagaimana Genii menyusun rekomendasi belajar personal dan lihat kursus prioritas untuk kamu.",
+    "Pantau bagaimana Genii AI menyusun rekomendasi belajar personal berdasarkan minat dan tujuan Anda. Lihat kursus prioritas yang dirancang khusus untuk perjalanan pembelajaran Anda.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function UserJourneyPage() {

@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Kebijakan Privasi | Genii",
-  description: "Kebijakan privasi platform Genii",
+  title: "Kebijakan Privasi",
+  description: "Kebijakan privasi Genii - Pelajari bagaimana kami melindungi data pribadi Anda, menggunakan informasi, dan menjaga keamanan saat menggunakan platform pembelajaran AI kami.",
 };
 
 export default function PrivacyPage() {

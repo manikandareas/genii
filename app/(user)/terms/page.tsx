@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Syarat & Ketentuan | Genii",
-  description: "Syarat dan ketentuan penggunaan platform Genii",
+  title: "Syarat & Ketentuan",
+  description: "Syarat dan ketentuan penggunaan platform Genii - Ketahui hak dan kewajiban Anda sebagai pengguna platform pembelajaran AI kami.",
 };
 
 export default function TermsPage() {
