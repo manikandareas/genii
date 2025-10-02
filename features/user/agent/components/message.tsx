@@ -9,7 +9,7 @@ import {
 } from "@/features/shared/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { MarkdownRenderer } from "./markdown-renderer";
-import { StepsContainer } from "./message-steps";
+import { ToolDisplay } from "./tool-display";
 import { useUser } from "@clerk/nextjs";
 
 /**
@@ -72,14 +72,14 @@ export const Message: React.FC<MessageProps> = (props) => {
         <div className={cn("min-w-0 flex-1", isUser ? "sm:max-w-[75%]" : "")}>
           <div
             className={cn(
-              "relative w-full max-w-full overflow-hidden rounded-md border bg-background/90 text-left text-muted-foreground backdrop-blur-sm",
+              "relative w-full max-w-full overflow-hidden  text-left text-muted-foreground backdrop-blur-sm",
               isUser ? "ml-auto text-right" : "",
             )}
           >
             {/* Agent steps visualization */}
             {hasSteps && (
-              <div className="px-1">
-                <StepsContainer parts={parts} />
+              <div className="p-4">
+                <ToolDisplay parts={parts} />
               </div>
             )}
 

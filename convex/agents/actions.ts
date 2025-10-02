@@ -11,7 +11,18 @@ export const streamChat = internalAction({
   handler: async (ctx, { promptMessageId, threadId }) => {
     const { thread } = await geniiAgent.continueThread(ctx, { threadId });
     const result = await thread.streamText(
-      { promptMessageId },
+      {
+        promptMessageId,
+        providerOptions: {
+          openai: {
+            include: [
+              "reasoning.encrypted_content",
+              "web_search_call.action.sources",
+            ],
+          },
+        },
+        toolChoice: "auto",
+      },
       { saveStreamDeltas: true },
     );
     await result.consumeStream();
