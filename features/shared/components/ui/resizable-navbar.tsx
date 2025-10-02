@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import React, { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/features/landing/components/logo";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -284,13 +285,7 @@ export const NavbarLogo = () => {
         className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-alt"
         role="img"
       >
-        <img
-          alt=""
-          className="invert filter"
-          height={20}
-          src="https://assets.aceternity.com/logo-dark.png"
-          width={20}
-        />
+        <Logo className=" filter" />
       </div>
       <span className="font-medium text-base text-text-primary transition-colors duration-150 group-hover:text-accent">
         Genii
