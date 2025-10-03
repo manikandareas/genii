@@ -147,7 +147,7 @@ const Footer2 = ({
 };
 
 export const AppFooter = withPathname(Footer2, {
-  include: ["/", "/courses*", "/privacy", "/terms"],
+  include: ["/", "/courses*", "/privacy", "/terms", "/journey"],
   exclude: [
     /^\/courses\/[^/]+\/(l|q)\/[^/]+$/,
     /^\/courses\/[^/]+\/q\/[^/]+\/(play|result)$/,

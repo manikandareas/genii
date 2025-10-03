@@ -6,13 +6,31 @@
 // Bagaimana (How): Pembelajaran step-by-step dari praktisi berpengalaman
 // Di mana (Where): Navigasi jelas dengan CTA yang compelling
 
+import { Book, Home, LineSquiggle } from "lucide-react";
+
 export const NAVBAR_COPY = {
   // Navigation Items
   navigation: {
-    home: "Beranda",
-    courses: "Kursus Terbaik",
-    progress: "Progress Kamu",
-    community: "Blog (Segera)",
+    home: {
+      text: "Beranda",
+      link: "/",
+      icon: Home,
+      color: "green",
+    },
+    courses: {
+      text: "Kursus Terbaik",
+      link: "/courses",
+      icon: Book,
+      color: "blue",
+    },
+
+    journey: {
+      text: "Journey",
+      link: "/journey",
+      icon: LineSquiggle,
+      isAuthRequired: true,
+      color: "purple",
+    },
   },
 
   // Authentication Section
@@ -25,7 +43,7 @@ export const NAVBAR_COPY = {
   // Feedback Section
   feedback: {
     desktop: "Isi Kuisioner 🙏🏻",
-    mobile: "Kirim Saran untuk Kemajuan Bersama",
+    mobile: "Please Isi Kuisioner Kawan 🙏🏻",
     ariaLabel: "Kirim masukan untuk pengembangan platform",
   },
 

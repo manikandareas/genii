@@ -1,5 +1,8 @@
+import { Logo } from "@/features/landing/components/logo";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/nextjs";
 import { IconMenu2, IconX } from "@tabler/icons-react";
+import { LucideIcon } from "lucide-react";
 import {
   AnimatePresence,
   motion,
@@ -8,8 +11,6 @@ import {
 } from "motion/react";
 import Link from "next/link";
 import React, { useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { Logo } from "@/features/landing/components/logo";
 
 interface NavbarProps {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ interface NavItemsProps {
   items: {
     name: string;
     link: string;
+    icon: LucideIcon;
+    color?: string;
     isAuthRequired?: boolean;
     upcoming?: boolean;
   }[];
@@ -50,6 +53,19 @@ interface MobileNavMenuProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+export const getIconColor = (color?: string) => {
+  switch (color) {
+    case "green":
+      return "text-green-500";
+    case "blue":
+      return "text-blue-500";
+    case "purple":
+      return "text-purple-500";
+    default:
+      return "text-text-primary";
+  }
+};
 
 export const Navbar = ({ children, className }: NavbarProps) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -113,6 +129,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
   const [focused, setFocused] = useState<number | null>(null);
 
   const { isSignedIn } = useAuth();
+
   return (
     // biome-ignore lint/nursery/noNoninteractiveElementInteractions: false positive
     <nav
@@ -154,7 +171,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
         }
         return (
           <Link
-            className="relative rounded-full px-4 py-2.5 text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+            className="relative flex items-center gap-2 rounded-full px-4 py-2.5 text-text-secondary transition-colors duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
             key={`link-${idx.toString()}`}
             onBlur={() => setFocused(null)}
             onClick={onItemClick}
@@ -169,6 +186,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
                 transition={{ duration: 0.15, ease: "easeOut" }}
               />
             )}
+            <item.icon size={18} className={getIconColor(item.color)} />
 
             <span className="relative z-20">{item.name}</span>
           </Link>

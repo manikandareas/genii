@@ -14,6 +14,7 @@ import {
   Navbar as NavbarComp,
   NavbarLogo,
   NavItems,
+  getIconColor,
 } from "@/features/shared/components/ui/resizable-navbar";
 import { withPathname } from "@/lib/with-pathname";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
@@ -21,12 +22,23 @@ import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 export function Navbar() {
   const navItems = [
     {
-      name: NAVBAR_COPY.navigation.home,
-      link: "/",
+      name: NAVBAR_COPY.navigation.home.text,
+      link: NAVBAR_COPY.navigation.home.link,
+      icon: NAVBAR_COPY.navigation.home.icon,
+      color: NAVBAR_COPY.navigation.home.color,
     },
     {
-      name: NAVBAR_COPY.navigation.courses,
-      link: "/courses",
+      name: NAVBAR_COPY.navigation.courses.text,
+      link: NAVBAR_COPY.navigation.courses.link,
+      icon: NAVBAR_COPY.navigation.courses.icon,
+      color: NAVBAR_COPY.navigation.courses.color,
+    },
+    {
+      name: NAVBAR_COPY.navigation.journey.text,
+      link: NAVBAR_COPY.navigation.journey.link,
+      icon: NAVBAR_COPY.navigation.journey.icon,
+      color: NAVBAR_COPY.navigation.journey.color,
+      isAuthRequired: NAVBAR_COPY.navigation.journey.isAuthRequired,
     },
   ];
 
@@ -130,7 +142,7 @@ export function Navbar() {
         >
           <nav
             aria-label={NAVBAR_COPY.accessibility.mobileNav}
-            className=" flex w-full flex-col gap-4"
+            className="flex w-full flex-col gap-4"
           >
             {navItems.map((item, idx) => (
               <Link
@@ -139,7 +151,10 @@ export function Navbar() {
                 onClick={closeMobileMenu}
                 href={item.link}
               >
-                <span className="block">{item.name}</span>
+                <span className="flex items-center gap-2">
+                  <item.icon size={18} className={getIconColor(item.color)} />{" "}
+                  {item.name}
+                </span>
               </Link>
             ))}
           </nav>
@@ -154,19 +169,11 @@ export function Navbar() {
                   {NAVBAR_COPY.auth.signIn}
                 </Button>
               </SignInButton>
-              {/* <SignUpButton mode="modal">
-                <Button
-                  className="w-full justify-center"
-                  onClick={closeMobileMenu}
-                >
-                  {NAVBAR_COPY.auth.getStarted}
-                </Button>
-              </SignUpButton> */}
             </SignedOut>
             <SignedIn>
               <Link
                 target="_blank"
-                href={process.env.NEXT_PUBLIC_QUESTIONER_URL as string}
+                href={process.env.NEXT_PUBLIC_QUESIONER_URL as string}
               >
                 <button
                   aria-label={NAVBAR_COPY.feedback.ariaLabel}
@@ -198,7 +205,7 @@ export function Navbar() {
 }
 
 export const AppNavbar = withPathname(Navbar, {
-  include: ["/", "/courses*", "/privacy", "/terms"],
+  include: ["/", "/courses*", "/privacy", "/terms", "/journey"],
   exclude: [
     /^\/courses\/[^/]+\/(l|q)\/[^/]+$/,
     /^\/courses\/[^/]+\/q\/[^/]+\/(play|result)$/,
