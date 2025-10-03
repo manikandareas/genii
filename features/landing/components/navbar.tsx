@@ -83,6 +83,21 @@ export function Navbar() {
         <NavbarLogo />
         <NavItems items={navItems} />
         <div className="flex items-center gap-3">
+          <Link
+            target="_blank"
+            href={process.env.NEXT_PUBLIC_QUESIONER_URL as string}
+            className="z-50"
+          >
+            <button
+              className="inline-flex items-center gap-2 rounded-full border border-border-hairline bg-white/5 px-4 py-2.5 text-text-secondary transition-all duration-150 hover:border-border-strong hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              type="button"
+            >
+              <Ticket className="size-4" />
+              <span className="hidden sm:inline">
+                {NAVBAR_COPY.feedback.desktop}
+              </span>
+            </button>
+          </Link>
           <Unauthenticated>
             <SignInButton mode="modal">
               <Button className="z-50" type="button">
@@ -91,21 +106,6 @@ export function Navbar() {
             </SignInButton>
           </Unauthenticated>
           <Authenticated>
-            <Link
-              target="_blank"
-              href={process.env.NEXT_PUBLIC_QUESIONER_URL as string}
-              className="z-50"
-            >
-              <button
-                className="inline-flex items-center gap-2 rounded-full border border-border-hairline bg-white/5 px-4 py-2.5 text-text-secondary transition-all duration-150 hover:border-border-strong hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                type="button"
-              >
-                <Ticket className="size-4" />
-                <span className="hidden sm:inline">
-                  {NAVBAR_COPY.feedback.desktop}
-                </span>
-              </button>
-            </Link>
             <div className="ml-2">
               <UserButton
                 appearance={{
@@ -160,6 +160,20 @@ export function Navbar() {
           </nav>
 
           <div className="flex w-full flex-col gap-4 border-border-hairline border-t pt-6">
+            <Link
+              target="_blank"
+              href={process.env.NEXT_PUBLIC_QUESIONER_URL as string}
+            >
+              <button
+                aria-label={NAVBAR_COPY.feedback.ariaLabel}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border-hairline bg-white/5 px-4 py-3 text-text-secondary transition-all duration-150 hover:border-border-strong hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                onClick={closeMobileMenu}
+                type="button"
+              >
+                <Ticket className="size-4" />
+                {NAVBAR_COPY.feedback.mobile}
+              </button>
+            </Link>
             <SignedOut>
               <SignInButton mode="modal">
                 <Button
@@ -170,22 +184,8 @@ export function Navbar() {
                 </Button>
               </SignInButton>
             </SignedOut>
-            <SignedIn>
-              <Link
-                target="_blank"
-                href={process.env.NEXT_PUBLIC_QUESIONER_URL as string}
-              >
-                <button
-                  aria-label={NAVBAR_COPY.feedback.ariaLabel}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-border-hairline bg-white/5 px-4 py-3 text-text-secondary transition-all duration-150 hover:border-border-strong hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                  onClick={closeMobileMenu}
-                  type="button"
-                >
-                  <Ticket className="size-4" />
-                  {NAVBAR_COPY.feedback.mobile}
-                </button>
-              </Link>
 
+            <SignedIn>
               <div className="flex justify-center pt-2">
                 <UserButton
                   appearance={{
