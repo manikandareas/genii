@@ -49,6 +49,7 @@ type CourseEnrollmentDialogProps = {
   course: EnrollmentCourse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: (data: { firstLessonSlug: string | null; courseSlug: string }) => void | Promise<void>;
 };
 
 type CourseContentTarget = {
@@ -61,6 +62,7 @@ export function CourseEnrollmentDialog({
   course,
   open,
   onOpenChange,
+  onSuccess,
 }: CourseEnrollmentDialogProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const pathname = usePathname();
@@ -93,15 +95,24 @@ export function CourseEnrollmentDialog({
 
   const { mutateAsync: enroll, isPending: isEnrolling } = useMutation({
     mutationFn: (input: { courseId: Id<"courses"> }) => enrollMutation(input),
-    onSuccess: async () => {
-      toast.success(COURSE_DETAIL_COPY.success.enrolled, {
-        description: COURSE_DETAIL_COPY.success.enrolledDesc,
-      });
-
+    onSuccess: async (data) => {
       await queryClient.invalidateQueries({
         queryKey: enrollmentQueryOptions.queryKey,
       });
       onOpenChange(false);
+
+      // Call custom onSuccess handler if provided
+      if (onSuccess) {
+        await onSuccess({
+          firstLessonSlug: data.firstLessonSlug,
+          courseSlug: data.courseSlug,
+        });
+      } else {
+        // Default behavior: show toast
+        toast.success(COURSE_DETAIL_COPY.success.enrolled, {
+          description: COURSE_DETAIL_COPY.success.enrolledDesc,
+        });
+      }
     },
     onError: (error) => {
       const message =

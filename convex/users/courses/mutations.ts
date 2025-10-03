@@ -30,6 +30,7 @@ export const enrollInCourse = mutation({
       throw new Error("Course not found");
     }
 
+    // Check if user already enrolled in this course
     const existingEnrollment = await ctx.db
       .query("course_enrollments")
       .withIndex("by_user_course", (q) =>
@@ -37,17 +38,12 @@ export const enrollInCourse = mutation({
       )
       .first();
 
-    const timestamp = Date.now();
-
     if (existingEnrollment) {
-      await ctx.db.patch(existingEnrollment._id, {
-        updatedAt: timestamp,
-        lastActivityAt: timestamp,
-      });
-
-      return await ctx.db.get(existingEnrollment._id);
+      throw new Error("Anda sudah terdaftar di kursus ini");
     }
 
+    // Create new enrollment
+    const timestamp = Date.now();
     const enrollmentId = await ctx.db.insert("course_enrollments", {
       userId: user._id,
       courseId,
@@ -59,7 +55,78 @@ export const enrollInCourse = mutation({
       updatedAt: timestamp,
     });
 
-    return await ctx.db.get(enrollmentId);
+    const enrollment = await ctx.db.get(enrollmentId);
+
+    // Get first lesson slug
+    const chapters = await ctx.db
+      .query("chapters")
+      .withIndex("by_course", (q) => q.eq("courseId", courseId))
+      .collect();
+
+    const orderedChapters = chapters.sort((a, b) => {
+      const aPosition = a.position ?? a._creationTime;
+      const bPosition = b.position ?? b._creationTime;
+      return aPosition - bPosition;
+    });
+
+    const prioritizedLessonIds: Doc<"lessons">["_id"][] = [];
+    const seenLessonIds = new Set<string>();
+
+    for (const chapter of orderedChapters) {
+      const sortedEntries = (chapter.contentOrder ?? [])
+        .map((entry, index) => ({ entry, index }))
+        .sort((a, b) => {
+          const aPosition = a.entry.position ?? a.index;
+          const bPosition = b.entry.position ?? b.index;
+          return aPosition - bPosition;
+        });
+
+      for (const { entry } of sortedEntries) {
+        if (entry?.contentType !== "lesson" || !entry.contentId) {
+          continue;
+        }
+
+        const lessonId = entry.contentId as Doc<"lessons">["_id"];
+        const lessonKey = String(lessonId);
+
+        if (!seenLessonIds.has(lessonKey)) {
+          prioritizedLessonIds.push(lessonId);
+          seenLessonIds.add(lessonKey);
+        }
+      }
+    }
+
+    let firstLessonSlug: string | null = null;
+
+    for (const lessonId of prioritizedLessonIds) {
+      const lesson = await ctx.db.get(lessonId);
+      if (lesson?.slug) {
+        firstLessonSlug = lesson.slug;
+        break;
+      }
+    }
+
+    if (!firstLessonSlug) {
+      const lessons = await ctx.db
+        .query("lessons")
+        .withIndex("by_course", (q) => q.eq("courseId", courseId))
+        .collect();
+
+      const fallbackLesson = lessons
+        .filter((lesson): lesson is Doc<"lessons"> => Boolean(lesson))
+        .sort((a, b) => a._creationTime - b._creationTime)
+        .find((lesson) => Boolean(lesson.slug));
+
+      if (fallbackLesson) {
+        firstLessonSlug = fallbackLesson.slug;
+      }
+    }
+
+    return {
+      enrollment,
+      firstLessonSlug,
+      courseSlug: course.slug,
+    };
   },
 });
 
