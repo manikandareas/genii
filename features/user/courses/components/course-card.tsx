@@ -1,7 +1,7 @@
 import { Doc } from "@/convex/_generated/dataModel";
 import { Badge } from "@/features/shared/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Clock, Star, Users } from "lucide-react";
+import { Clock, Lock, Star, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { CourseBadge } from "./course-badge";
@@ -26,7 +26,10 @@ export const CourseCard = (props: CourseCardProps) => {
           {props.thumbnail?.url && (
             <Image
               alt={props.title}
-              className="aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className={cn(
+                "aspect-video w-full object-cover transition-all duration-300 group-hover:scale-105",
+                props.readonly && "grayscale group-hover:grayscale-0",
+              )}
               loading="lazy"
               src={props.thumbnail.url}
               width={500}
@@ -49,6 +52,21 @@ export const CourseCard = (props: CourseCardProps) => {
             )}
             <CourseBadge difficulty={props.difficulty || "beginner"} />
           </div>
+
+          {/* Readonly Badge - Top Right */}
+          {props.readonly && (
+            <div className="absolute top-3 right-3 z-20">
+              <Badge
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 font-medium text-xs shadow-sm backdrop-blur-sm",
+                  "bg-muted/90 text-muted-foreground border border-border/50",
+                )}
+              >
+                <Lock className="h-3 w-3" />
+                Coming Soon
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Content Container */}

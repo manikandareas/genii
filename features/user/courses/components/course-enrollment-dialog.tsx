@@ -5,7 +5,7 @@ import { useCallback, useMemo } from "react";
 import { SignInButton } from "@clerk/nextjs";
 import { convexQuery, useConvexMutation } from "@convex-dev/react-query";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Clock3, Loader2, Sparkles, Trophy } from "lucide-react";
+import { CheckCircle2, Clock3, Info, Loader2, Sparkles, Trophy } from "lucide-react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ export type EnrollmentCourse = Pick<
   | "difficulty"
   | "learningOutcomes"
   | "thumbnail"
+  | "readonly"
 > & {
   slug?: Doc<"courses">["slug"];
 };
@@ -376,6 +377,41 @@ export function CourseEnrollmentDialog({
                 >
                   {COURSE_DETAIL_COPY.cta.enrolled.review}
                 </Button> */}
+              </div>
+            </div>
+          ) : course.readonly ? (
+            /* Readonly Course - Cannot Enroll */
+            <div className="space-y-5">
+              <div className="space-y-3 text-center">
+                <h3 className="text-lg font-bold text-foreground">
+                  Kursus Akan Segera Hadir
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Kursus ini sedang dalam tahap persiapan
+                </p>
+              </div>
+
+              <Button
+                className="w-full h-12 text-base font-semibold shadow-md transition-all duration-200"
+                disabled={true}
+                size="lg"
+                variant="secondary"
+              >
+                Belum Tersedia
+              </Button>
+
+              <div className="rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30 p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Informasi
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                      Kursus ini belum bisa di-enroll dalam waktu dekat. Kami sedang mempersiapkan konten terbaik untuk Anda.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

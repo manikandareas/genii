@@ -3,12 +3,14 @@
 import confetti from "canvas-confetti";
 import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowDown, ArrowRight, Loader2, Lock } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { Badge } from "@/features/shared/components/ui/badge";
 import { Button } from "@/features/shared/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
@@ -40,6 +42,7 @@ type EnrichedCourseRecommendation = {
     slug: string;
     description: string;
     difficulty: "beginner" | "intermediate" | "advanced";
+    readonly?: boolean;
     thumbnail?: {
       url?: string;
     } | null;
@@ -164,6 +167,7 @@ export function JourneyView({ showSkipButton = true }: JourneyViewProps) {
       // @ts-expect-error - thumbnail is optional
       thumbnail: course.thumbnail ?? undefined,
       slug: course.slug,
+      readonly: course.readonly,
     };
 
     setSelectedCourse(normalizedCourse);
@@ -261,15 +265,31 @@ export function JourneyView({ showSkipButton = true }: JourneyViewProps) {
       reason:
         item.reason || `Rekomendasi #${index + 1} berdasarkan preferensi Anda`,
       content: (
-        <Card className="w-full pt-0 sm:ml-auto max-w-none sm:w-md overflow-hidden border shadow-sm">
+        <Card className="w-full group pt-0 sm:ml-auto max-w-none sm:w-md overflow-hidden border shadow-sm">
           {item.course.thumbnail?.url && (
             <div className="relative aspect-video w-full h-48">
               <Image
                 src={item.course.thumbnail.url}
                 alt={item.course.title}
                 fill
-                className="object-cover"
+                className={cn(
+                  "object-cover transition-all duration-300",
+                  item.course.readonly && "grayscale group-hover:grayscale-0",
+                )}
               />
+              {item.course.readonly && (
+                <div className="absolute top-3 right-3 z-10">
+                  <Badge
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1 font-medium text-xs shadow-sm backdrop-blur-sm",
+                      "bg-muted/90 text-muted-foreground border border-border/50",
+                    )}
+                  >
+                    <Lock className="h-3 w-3" />
+                    Coming Soon
+                  </Badge>
+                </div>
+              )}
             </div>
           )}
           <CardHeader className="space-y-3 pb-3">
