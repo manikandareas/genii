@@ -4,7 +4,7 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 7200; // Revalidate every hour
+export const revalidate = 7200; // Revalidate every 2 hours
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = siteConfig.url;

@@ -47,6 +47,12 @@ export const COURSES_COPY = {
     },
   },
 
+  // Featured Courses Section
+  featuredCourses: {
+    badge: 'Kursus Pilihan',
+    description: 'Mengapa buang waktu mencari? Ini dia kursus terpopuler yang sudah terbukti mengubah karir ribuan profesional. Mulai dari yang terbaik!',
+  },
+
   // Empty States
   emptyStates: {
     noSearchResults: {
