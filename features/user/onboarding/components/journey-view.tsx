@@ -192,7 +192,11 @@ function TimelineSkeleton() {
   );
 }
 
-export function JourneyView() {
+type JourneyViewProps = {
+  showSkipButton?: boolean;
+};
+
+export function JourneyView({ showSkipButton = true }: JourneyViewProps) {
   const [selectedCourse, setSelectedCourse] = useState<EnrollmentCourse | null>(
     null,
   );
@@ -382,18 +386,20 @@ export function JourneyView() {
     <div className="relative min-h-screen pb-24">
       <div className="relative mx-auto flex w-full max-w-5xl flex-col gap-12 px-4 pt-12 sm:px-6 lg:px-8">
         {/* Skip Button */}
-        <div className="flex items-center justify-end">
-          <Link href={"/courses"}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Lewati untuk sekarang
-              <ArrowRight className="size-4 ml-1.5" />
-            </Button>
-          </Link>
-        </div>
+        {showSkipButton && (
+          <div className="flex items-center justify-end">
+            <Link href={"/courses"}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Lewati untuk sekarang
+                <ArrowRight className="size-4 ml-1.5" />
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Hero Section */}
         <section className="space-y-24 pt-4">
