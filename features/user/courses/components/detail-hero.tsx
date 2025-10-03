@@ -11,9 +11,10 @@ import { useQuery } from "@tanstack/react-query";
 import { convexQuery } from "@convex-dev/react-query";
 import { api } from "@/convex/_generated/api";
 import { usePathname } from "next/navigation";
-import { Loader } from "lucide-react";
+import { Loader, Lock, Star } from "lucide-react";
 import { COURSE_DETAIL_COPY } from "../constants/course-detail-copy";
 import { Badge } from "@/features/shared/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type IDetailHero = {
   course: Doc<"courses"> & {
@@ -42,7 +43,31 @@ export function DetailHero(props: IDetailHero) {
     : COURSE_DETAIL_COPY.ctaVariations.primary;
   return (
     <section className="flex flex-col items-center justify-center gap-8">
-      <CourseBadge difficulty={props.course.difficulty} />
+      <div className="flex items-center gap-3">
+        {props.course.featured && (
+          <Badge
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 font-medium text-xs shadow-sm",
+            )}
+            variant={"secondary"}
+          >
+            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+            Featured
+          </Badge>
+        )}
+        <CourseBadge difficulty={props.course.difficulty} />
+        {props.course.readonly && (
+          <Badge
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 font-medium text-xs shadow-sm",
+              "bg-muted/90 text-muted-foreground border border-border/50",
+            )}
+          >
+            <Lock className="h-3 w-3" />
+            Coming Soon
+          </Badge>
+        )}
+      </div>
       <h1 className="max-w-lg text-center font-light text-5xl text-primary leading-[1.1] tracking-tight md:text-6xl xl:max-w-2xl">
         {props.course.title}
       </h1>
