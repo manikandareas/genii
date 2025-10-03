@@ -84,7 +84,7 @@ export default function HeroSection() {
                   >
                     <SignedOut>
                       <SignInButton
-                        fallbackRedirectUrl="/progress"
+                        fallbackRedirectUrl="/courses"
                         mode="modal"
                         signUpFallbackRedirectUrl="/onboarding"
                       >
@@ -103,8 +103,8 @@ export default function HeroSection() {
                         className="rounded-xl px-8 text-base"
                         size="lg"
                       >
-                        <Link href={"/progress"}>
-                          <span className="text-nowrap">Progress Saya</span>
+                        <Link href={"/courses"}>
+                          <span className="text-nowrap">Explore Kursus</span>
                         </Link>
                       </Button>
                     </SignedIn>

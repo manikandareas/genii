@@ -1,6 +1,6 @@
 "use client";
 import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import { Ticket } from "lucide-react";
+import { Loader, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { NAVBAR_COPY } from "@/features/landing/constants/navbar-copy";
@@ -16,6 +16,7 @@ import {
   NavItems,
 } from "@/features/shared/components/ui/resizable-navbar";
 import { withPathname } from "@/lib/with-pathname";
+import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
 export function Navbar() {
   const navItems = [
@@ -26,11 +27,6 @@ export function Navbar() {
     {
       name: NAVBAR_COPY.navigation.courses,
       link: "/courses",
-    },
-    {
-      name: NAVBAR_COPY.navigation.progress,
-      link: "/progress",
-      isAuthRequired: true,
     },
   ];
 
@@ -75,14 +71,14 @@ export function Navbar() {
         <NavbarLogo />
         <NavItems items={navItems} />
         <div className="flex items-center gap-3">
-          <SignedOut>
+          <Unauthenticated>
             <SignInButton mode="modal">
               <Button className="z-50" type="button">
                 {NAVBAR_COPY.auth.signIn}
               </Button>
             </SignInButton>
-          </SignedOut>
-          <SignedIn>
+          </Unauthenticated>
+          <Authenticated>
             <Link
               target="_blank"
               href={process.env.NEXT_PUBLIC_QUESIONER_URL as string}
@@ -108,7 +104,10 @@ export function Navbar() {
                 }}
               />
             </div>
-          </SignedIn>
+          </Authenticated>
+          <AuthLoading>
+            <Loader size={20} className="animate-spin" />
+          </AuthLoading>
         </div>
       </NavBody>
 

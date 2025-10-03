@@ -3,6 +3,8 @@ import { withPathname } from "@/lib/with-pathname";
 import { SignUpButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Logo } from "./logo";
+import { Authenticated, Unauthenticated, AuthLoading } from "convex/react";
+import { Loader } from "lucide-react";
 
 interface MenuItem {
   title: string;
@@ -38,7 +40,7 @@ const Footer2 = ({
         { text: "AI Tutor", url: "#" },
         { text: "Tes Kemampuan", url: "#" },
         { text: "Project", url: "#" },
-        { text: "Progress", url: "/progress" },
+        // { text: "Progress", url: "/progress" },
       ],
     },
     {
@@ -84,14 +86,29 @@ const Footer2 = ({
               </div>
               <p className="mt-4 font-bold">{tagline}</p>
               <div className="mt-6">
-                <SignUpButton mode="modal">
-                  <button
-                    className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90"
-                    type="button"
-                  >
-                    Mulai Gratis
-                  </button>
-                </SignUpButton>
+                <AuthLoading>
+                  <Loader className="animate-spin" />
+                </AuthLoading>
+                <Unauthenticated>
+                  <SignUpButton mode="modal">
+                    <button
+                      className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90"
+                      type="button"
+                    >
+                      Mulai Gratis
+                    </button>
+                  </SignUpButton>
+                </Unauthenticated>
+                <Authenticated>
+                  <Link href="/courses">
+                    <button
+                      className="inline-flex items-center justify-center rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90"
+                      type="button"
+                    >
+                      Explore Kursus
+                    </button>
+                  </Link>
+                </Authenticated>
               </div>
             </div>
             {menuItems.map((section, sectionIdx) => (
