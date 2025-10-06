@@ -198,7 +198,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         {hasContent ? (
           <LessonContentRenderer
             content={lessonValue}
-            className="prose prose-invert max-w-none"
+            className="prose prose-invert max-w-4xl w-full mx-auto py-10"
             lessonId={currentItem.doc._id}
           />
         ) : (
@@ -222,13 +222,10 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
           onClick={handleMarkCompletion}
         >
           {isUpdating ? (
-            <Loader2 className="h-4 w-4 animate-spin text-highlight" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <CheckCircle2
-              className={cn(
-                "h-4 w-4",
-                isCompleted ? "text-emerald-800" : "text-highlight",
-              )}
+              className={cn("h-4 w-4", isCompleted && "text-emerald-800")}
             />
           )}
           {markCompleteLabel}

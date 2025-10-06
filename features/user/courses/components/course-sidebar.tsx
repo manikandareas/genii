@@ -34,8 +34,8 @@ export default function CourseSidebar({
     variant === "default"
       ? "fixed left-0 top-0 z-50 hidden h-screen w-[320px] border-r border-sidebar-border shadow-[0_0_40px_hsl(var(--muted)/0.35)] lg:flex"
       : variant === "animated"
-      ? "h-full w-full border-r border-sidebar-border shadow-[0_0_40px_hsl(var(--muted)/0.35)]"
-      : "h-full w-full overflow-hidden shadow-none",
+        ? "h-full w-full border-r border-sidebar-border shadow-[0_0_40px_hsl(var(--muted)/0.35)]"
+        : "h-full w-full overflow-hidden shadow-none",
     className,
   );
 
@@ -68,7 +68,7 @@ export default function CourseSidebar({
                 <div className="space-y-1">
                   {chapter.contents.map((item) => {
                     const href = `/courses/${course.slug}/${item.type === "lesson" ? "l" : "q"}/${item.doc.slug}`;
-                    const isActive = pathname === href;
+                    const isActive = pathname.includes(item.doc.slug);
 
                     return (
                       <Link
@@ -82,22 +82,19 @@ export default function CourseSidebar({
                         )}
                       >
                         <div className="mt-0.5">
-                          {/* {isActive ? (
-                            <CircleDot className="h-4 w-4 text-highlight" />
-                          ) : (
-                            statusIcon(item.status)
-                          )} */}
-                          {statusIcon(item.status)}
+                          {isActive && statusIcon("in_progress")}
+                          {item.status === "completed" &&
+                            statusIcon(item.status)}
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold leading-tight text-inherit">
+                            <p className="text-base font-semibold leading-tight text-inherit">
                               {item.doc.title}
                             </p>
                           </div>
-                          <p className="line-clamp-2 text-xs text-sidebar-foreground/70">
-                            {item.summary}
-                          </p>
+                          {/* <p className="line-clamp-2 text-xs text-sidebar-foreground/70">
+                            {item.estimatedDurationMinutes}
+                          </p> */}
                         </div>
                       </Link>
                     );
