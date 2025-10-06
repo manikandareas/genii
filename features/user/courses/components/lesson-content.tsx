@@ -194,11 +194,11 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         </div>
       </header>
 
-      <section className="pb-32">
+      <section className="pb-32  max-w-4xl w-full mx-auto py-10">
         {hasContent ? (
           <LessonContentRenderer
             content={lessonValue}
-            className="prose prose-invert max-w-4xl w-full mx-auto py-10"
+            className="prose prose-invert"
             lessonId={currentItem.doc._id}
           />
         ) : (
@@ -209,7 +209,7 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         )}
       </section>
 
-      <div className="py-32 space-y-4 border-t border-border">
+      <div className="py-32 space-y-4 border-t border-border  max-w-4xl w-full mx-auto">
         <h3 className="text-2xl font-semibold text-foreground">
           Kamu Menyelesaikan Pelajaran Ini
         </h3>
@@ -232,8 +232,8 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         </Button>
       </div>
 
-      <footer className="flex gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] items-center justify-between">
-        {previousItem && (
+      <footer className="flex gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] items-center justify-between  max-w-4xl w-full mx-auto">
+        {previousItem ? (
           <Link
             href={buildHref(course.slug, previousItem)}
             className="group flex md:min-w-[180px] items-center gap-2 rounded-full border border-border px-4 py-2 text-muted-foreground transition hover:border-border/60 hover:bg-muted hover:text-foreground"
@@ -251,6 +251,8 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
               Sebelumnya
             </span>
           </Link>
+        ) : (
+          <span />
         )}
 
         {nextItem && (
