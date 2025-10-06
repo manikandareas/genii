@@ -14,6 +14,7 @@ import Link from "next/link";
 import type { Value } from "platejs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import Giscus from "@giscus/react";
 
 import { queryClient } from "@/contexts/convex-client-provider";
 import { api } from "@/convex/_generated/api";
@@ -31,7 +32,6 @@ import { useSectionAsk } from "../../agent/context/ask-context";
 import { useCourseContent } from "../contexts/course-content-context";
 import { CourseContentItem } from "../types";
 import { normalisePlateValue } from "../utils/content-utils";
-import Utterances from "./uttearances";
 
 interface LessonContentProps {
   lessonSlug: string;
@@ -237,17 +237,27 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
         id="comments"
         className="py-32 w-full max-w-4xl mx-auto border-t border-border"
       >
-        <h3 className="text-2xl font-semibold text-foreground">
+        {/* <h3 className="text-2xl font-semibold text-foreground">
           Ada yang bikin bingung? Tulis pertanyaanmu.
         </h3>
         <p className="text-base text-muted-foreground mb-8">
           Kolom ini khusus pertanyaan terkait materi/bug di lesson ini ya.
-        </p>
-        <Utterances
+        </p> */}
+
+        <Giscus
+          id="comments"
           repo="manikandareas/genii"
-          issueTerm="pathname"
-          label="genii/comments"
-          theme="github-dark" // atau "preferred-color-scheme"
+          repoId="R_kgDOP2rFag"
+          category="Q&A"
+          categoryId="DIC_kwDOP2rFas4CwTUI"
+          mapping="pathname"
+          term="Ada yang bikin bingung? Tulis pertanyaanmu."
+          reactionsEnabled="1"
+          emitMetadata="0"
+          inputPosition="top"
+          theme="preferred_color_scheme"
+          lang="id"
+          loading="lazy"
         />
       </section>
 

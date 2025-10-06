@@ -1,15 +1,5 @@
 import type { NextConfig } from "next";
 
-const csp = [
-  "default-src 'self'",
-  "script-src 'self' https://utteranc.es",
-  "frame-src https://utteranc.es", // untuk iframe komentar
-  "img-src 'self' data: https://github.com https://avatars.githubusercontent.com",
-  "connect-src 'self'", // tambahkan origin lain kalau perlu
-  "style-src 'self'", // TETAP tanpa 'unsafe-inline' di halaman kamu
-  "font-src 'self' data:",
-].join("; ");
-
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
@@ -59,10 +49,6 @@ const nextConfig: NextConfig = {
             value: "camera=(), microphone=(), geolocation=()",
           },
         ],
-      },
-      {
-        source: "/(.*)",
-        headers: [{ key: "Content-Security-Policy", value: csp }],
       },
     ];
   },
