@@ -82,9 +82,11 @@ export default function CourseSidebar({
                         )}
                       >
                         <div className="mt-0.5">
-                          {isActive && statusIcon("in_progress")}
-                          {item.status === "completed" &&
-                            statusIcon(item.status)}
+                          {item.status === "completed"
+                            ? statusIcon("completed")
+                            : isActive
+                              ? statusIcon("in_progress")
+                              : null}
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between gap-3">
