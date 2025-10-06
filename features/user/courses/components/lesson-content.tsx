@@ -31,6 +31,7 @@ import { useSectionAsk } from "../../agent/context/ask-context";
 import { useCourseContent } from "../contexts/course-content-context";
 import { CourseContentItem } from "../types";
 import { normalisePlateValue } from "../utils/content-utils";
+import Utterances from "./uttearances";
 
 interface LessonContentProps {
   lessonSlug: string;
@@ -231,6 +232,24 @@ export default function LessonContent({ lessonSlug }: LessonContentProps) {
           {markCompleteLabel}
         </Button>
       </div>
+
+      <section
+        id="comments"
+        className="py-32 w-full max-w-4xl mx-auto border-t border-border"
+      >
+        <h3 className="text-2xl font-semibold text-foreground">
+          Ada yang bikin bingung? Tulis pertanyaanmu.
+        </h3>
+        <p className="text-base text-muted-foreground mb-8">
+          Kolom ini khusus pertanyaan terkait materi/bug di lesson ini ya.
+        </p>
+        <Utterances
+          repo="manikandareas/genii"
+          issueTerm="pathname"
+          label="genii/comments"
+          theme="github-dark" // atau "preferred-color-scheme"
+        />
+      </section>
 
       <footer className="flex gap-6 rounded-3xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-[0_20px_60px_hsl(var(--muted)/0.45)] items-center justify-between  max-w-4xl w-full mx-auto">
         {previousItem ? (
