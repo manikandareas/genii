@@ -152,18 +152,25 @@ export default function HeroSection() {
               ...transitionVariants,
             }}
           >
-            <div className="-mr-56 relative mt-8 overflow-hidden px-2 sm:mt-12 sm:mr-0 md:mt-20">
+            <div className="relative mt-8 overflow-hidden px-2 sm:mt-12 md:mt-20">
               <div
                 aria-hidden
                 className="absolute inset-0 z-10 bg-linear-to-b from-35% from-transparent to-background"
               />
-              <div className="relative inset-shadow-2xs mx-auto max-w-5xl overflow-hidden rounded-2xl border bg-background p-4 shadow-lg shadow-zinc-950/15 ring-1 ring-background dark:inset-shadow-white/20">
+              <div className="relative inset-shadow-2xs mx-auto max-w-5xl overflow-hidden rounded-xl md:rounded-2xl border bg-background p-2 md:p-4 shadow-md md:shadow-lg shadow-zinc-950/15 ring-1 ring-background dark:inset-shadow-white/20">
                 <Image
                   alt="Platform Belajar AI Genii"
-                  className="relative aspect-15/8 rounded-2xl bg-background"
+                  className="relative hidden md:block aspect-15/8 rounded-2xl bg-background"
                   height="1440"
                   src="/og-image.png"
                   width="2700"
+                />
+                <Image
+                  alt="Platform Belajar AI Genii"
+                  className="relative md:hidden aspect-15/8 rounded-2xl bg-background"
+                  height="480"
+                  src="/og-image.png"
+                  width="900"
                 />
               </div>
             </div>
