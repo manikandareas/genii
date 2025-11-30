@@ -164,3 +164,45 @@ export const getCourseContent = query({
     };
   },
 });
+
+export const listEnrollmentsForMe = query({
+  handler: async (ctx) => {
+    const identity = await ensureAuthenticated(ctx);
+
+    if (!identity) {
+      return [] as Array<{
+        enrollment: Doc<"course_enrollments">;
+        course: Doc<"courses"> | null;
+      }>;
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      return [] as Array<{
+        enrollment: Doc<"course_enrollments">;
+        course: Doc<"courses"> | null;
+      }>;
+    }
+
+    const enrollments = await ctx.db
+      .query("course_enrollments")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const courseIds = enrollments.map((e) => e.courseId);
+    const courses = await getAll(ctx.db, courseIds);
+    const courseById = new Map<string, Doc<"courses"> | null>();
+    courses.forEach((c) => {
+      if (c) courseById.set(c._id, c);
+    });
+
+    return enrollments.map((enrollment) => ({
+      enrollment,
+      course: courseById.get(enrollment.courseId) ?? null,
+    }));
+  },
+});

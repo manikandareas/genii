@@ -205,7 +205,7 @@ export function Navbar() {
 }
 
 export const AppNavbar = withPathname(Navbar, {
-  include: ["/", "/courses*", "/privacy", "/terms", "/journey"],
+  include: ["/", "/courses*", "/privacy", "/terms", "/journey", "/dashboard"],
   exclude: [
     /^\/courses\/[^/]+\/(l|q)\/[^/]+$/,
     /^\/courses\/[^/]+\/q\/[^/]+\/(play|result)$/,

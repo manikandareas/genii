@@ -125,6 +125,39 @@ export const getAttemptsByQuiz = query({
       )
       .collect();
 
-    return attempts.sort((a, b) => b.updatedAt - a.updatedAt);
+  return attempts.sort((a, b) => b.updatedAt - a.updatedAt);
+  },
+});
+
+/**
+ * List recent quiz attempts for current user
+ */
+export const listRecentAttempts = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, { limit }) => {
+    const identity = await ensureUser(ctx);
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerk", (q) => q.eq("clerkId", identity.subject))
+      .first();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const attempts = await ctx.db
+      .query("quiz_attempts")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const sorted = attempts.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+    const capped = typeof limit === "number" ? sorted.slice(0, Math.max(0, limit)) : sorted.slice(0, 10);
+    return capped;
   },
 });
