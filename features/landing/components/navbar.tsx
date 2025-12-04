@@ -1,5 +1,5 @@
 "use client";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { Loader, Ticket } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -20,12 +20,15 @@ import { withPathname } from "@/lib/with-pathname";
 import { Authenticated, AuthLoading, Unauthenticated } from "convex/react";
 
 export function Navbar() {
+  const { isSignedIn } = useAuth();
+  
   const navItems = [
     {
-      name: NAVBAR_COPY.navigation.home.text,
-      link: NAVBAR_COPY.navigation.home.link,
-      icon: NAVBAR_COPY.navigation.home.icon,
-      color: NAVBAR_COPY.navigation.home.color,
+      name: NAVBAR_COPY.navigation.dashboard.text,
+      link: NAVBAR_COPY.navigation.dashboard.link,
+      icon: NAVBAR_COPY.navigation.dashboard.icon,
+      color: NAVBAR_COPY.navigation.dashboard.color,
+      isAuthRequired: NAVBAR_COPY.navigation.dashboard.isAuthRequired,
     },
     {
       name: NAVBAR_COPY.navigation.courses.text,
@@ -144,19 +147,25 @@ export function Navbar() {
             aria-label={NAVBAR_COPY.accessibility.mobileNav}
             className="flex w-full flex-col gap-4"
           >
-            {navItems.map((item, idx) => (
-              <Link
-                className="relative rounded-lg px-3 py-2.5 font-medium text-base text-text-secondary transition-all duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                key={`mobile-link-${idx.toString()}`}
-                onClick={closeMobileMenu}
-                href={item.link}
-              >
-                <span className="flex items-center gap-2">
-                  <item.icon size={18} className={getIconColor(item.color)} />{" "}
-                  {item.name}
-                </span>
-              </Link>
-            ))}
+            {navItems.map((item, idx) => {
+              // Skip auth-required items if user is not signed in
+              if (item.isAuthRequired && !isSignedIn) {
+                return null;
+              }
+              return (
+                <Link
+                  className="relative rounded-lg px-3 py-2.5 font-medium text-base text-text-secondary transition-all duration-150 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                  key={`mobile-link-${idx.toString()}`}
+                  onClick={closeMobileMenu}
+                  href={item.link}
+                >
+                  <span className="flex items-center gap-2">
+                    <item.icon size={18} className={getIconColor(item.color)} />{" "}
+                    {item.name}
+                  </span>
+                </Link>
+              );
+            })}
           </nav>
 
           <div className="flex w-full flex-col gap-4 border-border-hairline border-t pt-6">

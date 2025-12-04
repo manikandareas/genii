@@ -19,5 +19,5 @@ export default async function RedirectPage() {
   if (clerkUser.publicMetadata.role === "admin")
     return redirect("/admin/dashboard");
 
-  return redirect("/courses");
+  return redirect("/dashboard");
 }

@@ -17,13 +17,19 @@ export const NAVBAR_COPY = {
       icon: Home,
       color: "green",
     },
+    dashboard: {
+      text: "Dashboard",
+      link: "/dashboard",
+      icon: Home,
+      isAuthRequired: true,
+      color: "green",
+    },
     courses: {
       text: "Kursus Terbaik",
       link: "/courses",
       icon: Book,
       color: "blue",
     },
-
     journey: {
       text: "Journey",
       link: "/journey",

@@ -1,32 +1,33 @@
 "use client";
 
+import { useUser } from "@clerk/nextjs";
 import { convexQuery } from "@convex-dev/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
-import { motion } from "motion/react";
 import {
-  ArrowRight,
-  BookOpen,
-  Brain,
-  CheckCircle2,
-  Clock,
-  GraduationCap,
-  Loader2,
-  Play,
-  Sparkles,
-  Target,
-  Trophy,
-  Zap,
+    ArrowRight,
+    BookOpen,
+    Brain,
+    CheckCircle2,
+    Flame,
+    GraduationCap,
+    Loader2,
+    Play,
+    Sparkles,
+    Star,
+    Target,
+    Trophy,
+    Zap,
 } from "lucide-react";
+import { motion } from "motion/react";
+import Image from "next/image";
+import Link from "next/link";
 
 import { api } from "@/convex/_generated/api";
 import type { Doc } from "@/convex/_generated/dataModel";
-import { AnimatedGroup } from "@/features/shared/components/ui/animated-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/features/shared/components/ui/avatar";
 import { Badge } from "@/features/shared/components/ui/badge";
 import { Button } from "@/features/shared/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/features/shared/components/ui/card";
+import { Card, CardContent } from "@/features/shared/components/ui/card";
 import { Progress } from "@/features/shared/components/ui/progress";
 import { TextEffect } from "@/features/shared/components/ui/text-effect";
 import { cn } from "@/lib/utils";
@@ -37,9 +38,27 @@ type EnrollmentWithCourse = {
 };
 
 const levelConfig = {
-  beginner: { icon: Sparkles, color: "text-blue-500", bg: "bg-blue-500/10" },
-  intermediate: { icon: Zap, color: "text-amber-500", bg: "bg-amber-500/10" },
-  advanced: { icon: Trophy, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  beginner: { 
+    label: "Pemula",
+    icon: Sparkles, 
+    color: "text-chart-2", 
+    bg: "bg-chart-2/10",
+    border: "border-chart-2/20" 
+  },
+  intermediate: { 
+    label: "Menengah",
+    icon: Zap, 
+    color: "text-chart-4", 
+    bg: "bg-chart-4/10",
+    border: "border-chart-4/20"
+  },
+  advanced: { 
+    label: "Mahir",
+    icon: Trophy, 
+    color: "text-chart-1", 
+    bg: "bg-chart-1/10",
+    border: "border-chart-1/20"
+  },
 };
 
 const styleConfig = {
@@ -75,10 +94,7 @@ export default function ProfileView() {
         ? items.reduce((acc, e) => acc + (e.enrollment.percentComplete ?? 0), 0) / total
         : 0,
     );
-    const lastActivity = items
-      .map((e) => e.enrollment.lastActivityAt ?? 0)
-      .sort((a, b) => b - a)[0];
-    return { total, completed, inProgress, average, lastActivity };
+    return { total, completed, inProgress, average };
   })();
 
   const level = (user?.level ?? "beginner") as keyof typeof levelConfig;
@@ -94,439 +110,271 @@ export default function ProfileView() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <div className="relative">
-            <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-          <p className="text-sm text-muted-foreground">Memuat profil...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-medium">Menyiapkan dashboard...</p>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-8">
-      {/* Hero Header with User Profile (PB-02) */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/5 via-primary/10 to-background border p-6 md:p-8"
-      >
-        <div className="absolute inset-0 bg-grid-white/10 [mask-image:radial-gradient(ellipse_at_center,white,transparent_70%)]" />
-        <div className="relative flex flex-col md:flex-row items-start md:items-center gap-6">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+    <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-8">
+      {/* Header Area */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <TextEffect
+            as="h1"
+            className="text-3xl md:text-4xl font-black tracking-tight text-foreground"
+            preset="fade-in-blur"
+            speedSegment={0.05}
           >
-            <Avatar className="h-20 w-20 md:h-24 md:w-24 ring-4 ring-background shadow-xl">
-              <AvatarImage src={clerkUser?.imageUrl} alt={clerkUser?.fullName ?? "User"} />
-              <AvatarFallback className="text-2xl font-bold bg-primary/10">
-                {clerkUser?.firstName?.[0] ?? "U"}
-              </AvatarFallback>
-            </Avatar>
-          </motion.div>
-          <div className="flex-1 space-y-2">
-            <TextEffect
-              as="h1"
-              className="text-2xl md:text-3xl font-bold tracking-tight"
-              preset="fade-in-blur"
-              speedSegment={0.03}
-            >
-              {`Halo, ${clerkUser?.firstName ?? "Learner"}! 👋`}
-            </TextEffect>
-            <p className="text-sm md:text-base text-muted-foreground max-w-lg">
-              Kelola preferensi belajar dan pantau progres perjalanan pembelajaran Anda.
-            </p>
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <Badge variant="secondary" className={cn("gap-1.5", levelConfig[level]?.bg, levelConfig[level]?.color)}>
-                <LevelIcon className="h-3.5 w-3.5" />
-                <span className="capitalize">{level}</span>
-              </Badge>
-              <Badge variant="outline" className="gap-1.5">
-                <StyleIcon className="h-3.5 w-3.5" />
-                {styleConfig[style]?.label ?? style}
-              </Badge>
-              <Badge variant="outline" className="gap-1.5 uppercase">
-                🌐 {user?.languagePreference ?? "id"}
-              </Badge>
-            </div>
-          </div>
-          <div className="flex gap-2 self-start md:self-center">
-            <Link href="/onboarding">
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <GraduationCap className="h-4 w-4" />
-                Ubah preferensi
-              </Button>
-            </Link>
-          </div>
+            {`Hi, ${clerkUser?.firstName ?? "Teman"}! 👋`}
+          </TextEffect>
+          <p className="text-muted-foreground font-medium mt-1">
+            Siap untuk petualangan belajar hari ini?
+          </p>
         </div>
-      </motion.section>
-
-      {/* Continue Learning Card (PB-17) */}
-      {continueLearning && (
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-background overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex flex-col md:flex-row">
-                {continueLearning.course?.thumbnail?.url && (
-                  <div className="relative h-40 md:h-auto md:w-48 shrink-0 overflow-hidden">
-                    <img
-                      src={continueLearning.course.thumbnail.url}
-                      alt={continueLearning.course.title}
-                      className="h-full w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent md:bg-gradient-to-r" />
-                  </div>
-                )}
-                <div className="flex-1 p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-primary flex items-center gap-1.5">
-                        <Play className="h-3.5 w-3.5" />
-                        Lanjutkan Belajar
-                      </p>
-                      <h3 className="font-semibold text-lg">{continueLearning.course?.title ?? "Kursus"}</h3>
-                    </div>
-                    <Link href={`/courses/${continueLearning.course?.slug}`}>
-                      <Button size="sm" className="gap-1.5 shrink-0">
-                        Lanjutkan
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Progres</span>
-                      <span className="font-medium">{continueLearning.enrollment.percentComplete ?? 0}%</span>
-                    </div>
-                    <div className="relative">
-                      <Progress value={continueLearning.enrollment.percentComplete ?? 0} className="h-2" />
-                      <motion.div
-                        className="absolute top-0 left-0 h-full bg-primary/30 rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${continueLearning.enrollment.percentComplete ?? 0}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.section>
-      )}
-
-      {/* Stats Grid (PB-12) */}
-      <AnimatedGroup preset="blur-slide" className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="group hover:shadow-md transition-all duration-300 hover:border-primary/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 group-hover:scale-110 transition-transform">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stats.total}</p>
-              <p className="text-xs text-muted-foreground">Kursus Diikuti</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="group hover:shadow-md transition-all duration-300 hover:border-primary/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
-              <Clock className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stats.inProgress}</p>
-              <p className="text-xs text-muted-foreground">Sedang Berjalan</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="group hover:shadow-md transition-all duration-300 hover:border-primary/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
-              <CheckCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stats.completed}</p>
-              <p className="text-xs text-muted-foreground">Selesai</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="group hover:shadow-md transition-all duration-300 hover:border-primary/30">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-500 group-hover:scale-110 transition-transform">
-              <Target className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{stats.average}%</p>
-              <p className="text-xs text-muted-foreground">Rata-rata Progres</p>
-            </div>
-          </CardContent>
-        </Card>
-      </AnimatedGroup>
-
-      {/* Learning Goals (PB-02) */}
-      {(user?.learningGoals ?? []).length > 0 && (
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-          className="space-y-3"
-        >
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold">Tujuan Pembelajaran</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {(user?.learningGoals ?? []).map((goal, idx) => (
-              <motion.div
-                key={goal}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 * idx }}
-              >
-                <Badge variant="secondary" className="capitalize px-3 py-1.5 text-sm">
-                  {goal}
-                </Badge>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
-      )}
-
-      {/* Kursus Saya */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-        className="space-y-4"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold text-lg">Kursus Saya</h2>
-          </div>
-          <Link href="/journey">
-            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-primary">
-              Lihat semua
-              <ArrowRight className="h-4 w-4" />
+        <Link href="/onboarding">
+            <Button variant="outline" className="rounded-full border-2 border-muted hover:border-primary/50 hover:bg-primary/5 transition-all duration-300">
+                <GraduationCap className="h-4 w-4 mr-2" />
+                Preferensi Belajar
             </Button>
-          </Link>
-        </div>
-        {items.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring" }}
-                className="p-4 rounded-full bg-primary/10 mb-4"
-              >
-                <GraduationCap className="h-8 w-8 text-primary" />
-              </motion.div>
-              <h3 className="font-semibold mb-1">Belum ada kursus</h3>
-              <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                Mulai perjalanan pembelajaran Anda dengan mengikuti kursus yang direkomendasikan.
-              </p>
-              <Link href="/journey">
-                <Button className="gap-1.5">
-                  <Sparkles className="h-4 w-4" />
-                  Lihat Rekomendasi
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <AnimatedGroup preset="blur-slide" className="grid gap-4 md:grid-cols-2">
-            {items.map(({ enrollment, course }) => {
-              const percent = enrollment.percentComplete ?? 0;
-              const href = course?.slug ? `/courses/${course.slug}` : undefined;
-              const statusConfig = {
-                not_started: { label: "Belum mulai", color: "text-muted-foreground", bg: "bg-muted" },
-                in_progress: { label: "Sedang berjalan", color: "text-amber-500", bg: "bg-amber-500/10" },
-                completed: { label: "Selesai", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-              }[enrollment.status];
+        </Link>
+      </div>
 
-              return (
-                <Card
-                  key={enrollment._id}
-                  className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:border-primary/30"
-                >
-                  {course?.thumbnail?.url && (
-                    <div className="relative h-36 w-full overflow-hidden">
-                      <img
-                        src={course.thumbnail.url}
-                        alt={course.title}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                      <Badge
-                        variant="secondary"
-                        className={cn("absolute bottom-3 left-3", statusConfig.bg, statusConfig.color)}
-                      >
-                        {statusConfig.label}
-                      </Badge>
-                    </div>
-                  )}
-                  <CardContent className="p-4 space-y-4">
-                    <div>
-                      <h3 className="font-semibold line-clamp-1 group-hover:text-primary transition-colors">
-                        {course?.title ?? "Kursus"}
-                      </h3>
-                    </div>
+      {/* Bento Grid Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* Profile Card - Span 2 */}
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="md:col-span-2 row-span-1"
+        >
+            <Card className="h-full border-2 shadow-none rounded-3xl overflow-hidden relative group hover:border-primary/20 transition-colors">
+                <div className={cn("absolute inset-0 opacity-5", levelConfig[level].bg)} />
+                <CardContent className="p-6 flex items-center gap-6 h-full relative z-10">
+                    <Avatar className="h-24 w-24 border-4 border-background shadow-sm">
+                        <AvatarImage src={clerkUser?.imageUrl} />
+                        <AvatarFallback className="text-2xl font-bold bg-muted">{clerkUser?.firstName?.[0]}</AvatarFallback>
+                    </Avatar>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Progres</span>
-                        <span
-                          className={cn(
-                            "font-semibold",
-                            percent >= 100 && "text-emerald-500",
-                            percent >= 50 && percent < 100 && "text-amber-500",
-                          )}
-                        >
-                          {percent}%
-                        </span>
-                      </div>
-                      <div className="relative h-2 rounded-full bg-muted overflow-hidden">
-                        <motion.div
-                          className={cn(
-                            "absolute inset-y-0 left-0 rounded-full",
-                            percent >= 100 ? "bg-emerald-500" : "bg-primary",
-                          )}
-                          initial={{ width: 0 }}
-                          animate={{ width: `${percent}%` }}
-                          transition={{ duration: 0.8, ease: "easeOut" }}
-                        />
-                      </div>
-                    </div>
-                    {href && (
-                      <Link href={href} className="block">
-                        <Button
-                          variant={enrollment.status === "completed" ? "outline" : "default"}
-                          size="sm"
-                          className="w-full gap-1.5"
-                        >
-                          {enrollment.status === "completed" ? (
-                            <>
-                              <CheckCircle2 className="h-4 w-4" />
-                              Lihat Kembali
-                            </>
-                          ) : (
-                            <>
-                              <Play className="h-4 w-4" />
-                              Lanjutkan
-                            </>
-                          )}
-                        </Button>
-                      </Link>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </AnimatedGroup>
-        )}
-      </motion.section>
-
-      {/* Quiz Terbaru */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="space-y-4"
-      >
-        <div className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold text-lg">Aktivitas Quiz Terbaru</h2>
-        </div>
-        {recentAttempts.data && recentAttempts.data.length > 0 ? (
-          <AnimatedGroup preset="blur-slide" className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {recentAttempts.data.slice(0, 6).map((a) => {
-              const scorePercent = a.totalQuestions > 0
-                ? Math.round((a.correctCount ?? 0) / a.totalQuestions * 100)
-                : 0;
-              const isPassed = scorePercent >= 70;
-
-              return (
-                <Card key={a._id} className="group hover:shadow-md transition-all duration-300">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className={cn(
-                          "p-1.5 rounded-lg",
-                          isPassed ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500",
-                        )}>
-                          {isPassed ? <Trophy className="h-4 w-4" /> : <Target className="h-4 w-4" />}
+                        <div className="flex flex-wrap gap-2">
+                             <Badge variant="secondary" className={cn("rounded-full px-3 py-1", levelConfig[level].bg, levelConfig[level].color)}>
+                                <LevelIcon className="h-3.5 w-3.5 mr-1.5" />
+                                {levelConfig[level].label}
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full px-3 py-1 bg-background/50 backdrop-blur-sm">
+                                <StyleIcon className="h-3.5 w-3.5 mr-1.5" />
+                                {styleConfig[style]?.label}
+                            </Badge>
                         </div>
-                        <span className="text-sm font-medium">Quiz</span>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "capitalize",
-                          a.status === "graded" && isPassed && "border-emerald-500 text-emerald-500",
-                          a.status === "graded" && !isPassed && "border-amber-500 text-amber-500",
-                        )}
-                      >
-                        {a.status === "graded" ? (isPassed ? "Lulus" : "Belum Lulus") : a.status}
-                      </Badge>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                             <span className="inline-flex items-center gap-1">
+                                🌐 {user?.languagePreference === "id" ? "Bahasa Indonesia" : "English"}
+                             </span>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <p className="text-xs text-muted-foreground">Skor</p>
-                        <p className="text-xl font-bold">{a.correctCount ?? 0}/{a.totalQuestions}</p>
-                      </div>
-                      <div className="relative h-12 w-12">
-                        <svg className="h-12 w-12 -rotate-90">
-                          <circle
-                            cx="24"
-                            cy="24"
-                            r="20"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                            className="text-muted"
-                          />
-                          <motion.circle
-                            cx="24"
-                            cy="24"
-                            r="20"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                            strokeDasharray={`${scorePercent * 1.256} 125.6`}
-                            className={isPassed ? "text-emerald-500" : "text-amber-500"}
-                            initial={{ strokeDasharray: "0 125.6" }}
-                            animate={{ strokeDasharray: `${scorePercent * 1.256} 125.6` }}
-                            transition={{ duration: 1, ease: "easeOut" }}
-                          />
-                        </svg>
-                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold">
-                          {scorePercent}%
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
+                </CardContent>
+            </Card>
+        </motion.div>
+
+        {/* Quick Stats Cards */}
+        <motion.div 
+             initial={{ opacity: 0, y: 20 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ delay: 0.1 }}
+             className="grid grid-cols-2 gap-4 md:col-span-2 lg:col-span-2"
+        >
+            <Card className="border-2 shadow-none rounded-3xl bg-chart-4/10 border-chart-4/20 flex flex-col justify-center items-center p-4 hover:scale-[1.02] transition-transform cursor-default">
+                <Trophy className="h-8 w-8 text-chart-4 mb-2" />
+                <span className="text-3xl font-black text-foreground">{stats.completed}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Selesai</span>
+            </Card>
+             <Card className="border-2 shadow-none rounded-3xl bg-chart-2/10 border-chart-2/20 flex flex-col justify-center items-center p-4 hover:scale-[1.02] transition-transform cursor-default">
+                <Flame className="h-8 w-8 text-chart-2 mb-2" />
+                <span className="text-3xl font-black text-foreground">{stats.inProgress}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Aktif</span>
+            </Card>
+             <Card className="border-2 shadow-none rounded-3xl bg-chart-5/10 border-chart-5/20 flex flex-col justify-center items-center p-4 hover:scale-[1.02] transition-transform cursor-default">
+                <Star className="h-8 w-8 text-chart-5 mb-2" />
+                <span className="text-3xl font-black text-foreground">{stats.average}%</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Rata-rata</span>
+            </Card>
+            <Card className="border-2 shadow-none rounded-3xl bg-chart-1/10 border-chart-1/20 flex flex-col justify-center items-center p-4 hover:scale-[1.02] transition-transform cursor-default">
+                <BookOpen className="h-8 w-8 text-chart-1 mb-2" />
+                <span className="text-3xl font-black text-foreground">{stats.total}</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total</span>
+            </Card>
+        </motion.div>
+
+        {/* Continue Learning - Wide Card */}
+        {continueLearning && (
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="col-span-1 md:col-span-3 lg:col-span-4"
+            >
+                <Card className="border-2 p-0 shadow-none rounded-3xl overflow-hidden bg-background hover:border-primary/30 transition-all group">
+                    <CardContent className="p-0 flex flex-col md:flex-row">
+                        <div className="relative w-full md:w-64 h-48 md:h-auto shrink-0 overflow-hidden">
+                             {continueLearning.course?.thumbnail?.url ? (
+                                <Image
+                                    src={continueLearning.course.thumbnail.url}
+                                    alt={continueLearning.course.title}
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                                />
+                             ) : (
+                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                    <BookOpen className="h-12 w-12 text-muted-foreground/50" />
+                                </div>
+                             )}
+                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden" />
+                             <div className="absolute bottom-3 left-3 md:hidden">
+                                <Badge className="bg-background/90 text-foreground backdrop-blur-md border-0">
+                                    Lanjutkan
+                                </Badge>
+                             </div>
+                        </div>
+                        <div className="p-6 flex-1 flex flex-col justify-center gap-4">
+                            <div>
+                                <div className="hidden md:flex items-center gap-2 mb-2">
+                                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-0">
+                                        <Play className="h-3 w-3 mr-1" fill="currentColor" />
+                                        Lanjutkan Belajar
+                                    </Badge>
+                                </div>
+                                <h3 className="text-2xl font-bold leading-tight mb-2 group-hover:text-primary transition-colors">
+                                    {continueLearning.course?.title}
+                                </h3>
+                                <p className="text-muted-foreground line-clamp-2">
+                                    {continueLearning.course?.description}
+                                </p>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm font-medium">
+                                    <span>Progres Kamu</span>
+                                    <span>{continueLearning.enrollment.percentComplete}%</span>
+                                </div>
+                                <Progress value={continueLearning.enrollment.percentComplete} className="h-3 rounded-full bg-muted" indicatorClassName="bg-primary" />
+                            </div>
+                            <div className="pt-2">
+                                <Link href={`/courses/${continueLearning.course?.slug}`}>
+                                    <Button className="rounded-full font-bold shadow-none" size="lg">
+                                        Lanjutkan Materi <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+                    </CardContent>
                 </Card>
-              );
-            })}
-          </AnimatedGroup>
-        ) : (
-          <Card className="border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="p-3 rounded-full bg-muted mb-3">
-                <Brain className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground">Belum ada aktivitas quiz.</p>
-            </CardContent>
-          </Card>
+            </motion.div>
         )}
-      </motion.section>
+      </div>
+
+      {/* Courses Grid */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+             <h2 className="text-2xl font-bold flex items-center gap-2">
+                <BookOpen className="h-6 w-6 text-primary" />
+                Kursus Saya
+             </h2>
+             <Link href="/journey">
+                <Button variant="ghost" className="rounded-full hover:bg-muted">
+                    Lihat Semua <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+             </Link>
+        </div>
+        
+        {items.length === 0 ? (
+             <Card className="border-2 border-dashed shadow-none rounded-3xl bg-muted/30">
+                <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="h-16 w-16 rounded-full bg-background border-2 flex items-center justify-center mb-4">
+                        <Sparkles className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-2">Belum ada kursus</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                        Mulai perjalanan belajarmu dengan memilih kursus yang menarik!
+                    </p>
+                    <Link href="/journey">
+                        <Button size="lg" className="rounded-full font-bold shadow-none">
+                            Cari Kursus Baru
+                        </Button>
+                    </Link>
+                </CardContent>
+             </Card>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {items.map(({ enrollment, course }) => (
+                    <Link key={enrollment._id} href={course?.slug ? `/courses/${course.slug}` : "#"} className="group">
+                        <Card className="h-full pt-0 border-2 shadow-none rounded-3xl overflow-hidden hover:-translate-y-1 transition-all duration-300 hover:border-primary/50">
+                            <div className="relative aspect-video bg-muted overflow-hidden">
+                                {course?.thumbnail?.url ? (
+                                    <Image src={course.thumbnail.url} alt={course.title} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-secondary">
+                                        <BookOpen className="h-10 w-10 text-muted-foreground/40" />
+                                    </div>
+                                )}
+                                <div className="absolute top-3 right-3">
+                                    {enrollment.status === "completed" && (
+                                        <Badge className="bg-emerald-500 text-white border-0 shadow-sm">Selesai</Badge>
+                                    )}
+                                    {enrollment.status === "in_progress" && (
+                                        <Badge className="bg-amber-500 text-white border-0 shadow-sm">Sedang Belajar</Badge>
+                                    )}
+                                </div>
+                            </div>
+                            <CardContent className="p-5 space-y-4">
+                                <h3 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+                                    {course?.title}
+                                </h3>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        <span>Progres</span>
+                                        <span>{enrollment.percentComplete}%</span>
+                                    </div>
+                                    <Progress value={enrollment.percentComplete} className="h-2 rounded-full bg-muted" indicatorClassName={cn(enrollment.percentComplete === 100 ? "bg-emerald-500" : "bg-primary")} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                ))}
+            </div>
+        )}
+      </div>
+
+      {/* Recent Quizzes */}
+      {recentAttempts.data && recentAttempts.data.length > 0 && (
+        <div className="space-y-6">
+             <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Brain className="h-6 w-6 text-primary" />
+                Aktivitas Quiz
+             </h2>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {recentAttempts.data.slice(0, 4).map((attempt) => {
+                    const isPassed = (attempt.correctCount ?? 0) / attempt.totalQuestions >= 0.7;
+                    return (
+                        <Card key={attempt._id} className="border-2 shadow-none rounded-3xl p-4 flex items-center justify-between hover:border-primary/30 transition-colors">
+                            <div>
+                                <p className="text-sm font-bold text-muted-foreground mb-1">Quiz</p>
+                                <p className="font-black text-2xl">
+                                    {attempt.correctCount}/{attempt.totalQuestions}
+                                </p>
+                            </div>
+                            <div className={cn(
+                                "h-12 w-12 rounded-full flex items-center justify-center border-2",
+                                isPassed ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-rose-500/10 border-rose-500/20 text-rose-500"
+                            )}>
+                                {isPassed ? <CheckCircle2 className="h-6 w-6" /> : <Target className="h-6 w-6" />}
+                            </div>
+                        </Card>
+                    )
+                })}
+             </div>
+        </div>
+      )}
     </div>
   );
 }
